@@ -1,0 +1,4 @@
+#Uncomment in order to change the sqlite3 database location. Default is to use the current directory
+#for development purposes. Change to some convenient location such as /var in production setups.
+#[sqlite3]
+#path = 'db.sqlite3'
