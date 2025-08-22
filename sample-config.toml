@@ -1,0 +1,8 @@
+#Sample configuration file. All commented configurations contain their default values where
+#applicable. Uncomment and edit to change them.
+
+[sqlite3]
+#path = 'db.sqlite3'  #Default sqlite3 database file (consider moving to /var or similar)
+
+[mediawiki_server]
+#api =                #A server URL must be provided, example: 'https://www.example.com/w/api.php'
