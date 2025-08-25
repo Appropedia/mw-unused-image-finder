@@ -1,10 +1,17 @@
 #!/usr/bin/env -S sh -c 'cd $(dirname $0); python/bin/python -m $(basename ${0%.py}) $@'
 
 from datetime import datetime
+from urllib.parse import urlparse
+import http.client
+import PIL
+import io
+import imagehash
 from modules.common import config
 from modules.model import db
 from modules.model import images
 from modules.model import revisions
+from modules.model import hashes
+from modules.model import views
 from modules.mediawiki import api_client
 
 config.load('config.toml')
@@ -110,8 +117,63 @@ def update_image_index():
   api_client.close()
   print('Done')
 
+def update_hashes():
+  print('Downloading images and calculating hashes...')
+
+  revision_count = 0
+  revision_total = views.pending_hash_total()
+  last_hostname = None
+  last_scheme = None
+  for revision_id, revision_url in views.pending_hashes():
+    revision_count += 1
+
+    #Parse the server url
+    server = urlparse(revision_url)
+
+    #Reuse the last connection if possible, otherwise create a new one (saves time)
+    if server.hostname != last_hostname or server.scheme != last_scheme:
+      conn = http.client.HTTPConnection(server.hostname) if server.scheme == 'http' else\
+             http.client.HTTPSConnection(server.hostname)
+      last_hostname = server.hostname
+      last_scheme = server.scheme
+
+    #Perform a request to download the image, then get the response
+    conn.request('GET', server.path)
+    rsp = conn.getresponse()
+
+    #Make sure the response is 200 - OK
+    if rsp.status != 200:
+      raise ConnectionError(f'Error code {rsp.status} - {rsp.reason}')
+
+    #Open the downloaded image with PIL
+    try:
+      img = PIL.Image.open(io.BytesIO(rsp.read()))
+    except PIL.UnidentifiedImageError:
+      #The image file could not be recognized. Create a null hash in its place.
+      hashes.create(revision_id, (None,) * 8)
+      print(f'{revision_count}/{revision_total} Not a recognized image file: {revision_url}')
+      continue
+
+    #Calculate the hash for every 90 degreee rotation of this image, then structure it as individual
+    #bytes in a tuple
+    new_hashes = set()  #Use a set to reduce the hashes of images with rotational symmetry
+    for angle in range(0, 360, 90):
+      string_hash = str(imagehash.phash(img.rotate(angle, expand = True)))
+      tuple_hash = tuple(int(string_hash[i: i+2], 16) for i in range(0, len(string_hash), 2))
+      new_hashes.update(set((tuple_hash,)))
+
+    #Store the hashes
+    for h in new_hashes:
+      hashes.create(revision_id, h)
+
+    print(f'{revision_count}/{revision_total} {revision_url}')
+    conn.close()
+
+  print('Done')
+
 try:
   update_image_index()
+  update_hashes()
 except KeyboardInterrupt:
   print()
 except:
