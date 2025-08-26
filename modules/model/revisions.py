@@ -1,5 +1,5 @@
-from modules.model import db
 from collections.abc import Iterator
+from modules.model import db
 
 #Schema initialization function
 @db.schema
