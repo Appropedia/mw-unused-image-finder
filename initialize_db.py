@@ -7,7 +7,7 @@ from modules.model import revisions
 from modules.model import hashes
 from modules.model import views
 
-config.load('config.toml')
+config.load('config.toml', warn_unknown = False)
 
 db.go_without_flask()
 db.initialize_schema()

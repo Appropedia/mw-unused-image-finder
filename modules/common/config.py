@@ -52,11 +52,12 @@ class _nested_config:
   # - initializers: A dictionary containing the values to load, with keys indicating the
   #   configuration names. Nested dictionaries indicate nested configuration initializers.
   # - path: A tuple containing the names of parent configurations, in descending order of hierarchy.
-  def load(self, initializers: dict, path: tuple = ()):
+  def load(self, initializers: dict, warn_unknown: bool, path: tuple = ()):
     for name, value in initializers.items():
       #Make sure the provided initializer refers to a registered configuration (skip it otherwise)
       if name not in self._descriptors:
-        print(f'Warning: Unknown configuration: {'.'.join(path + (name,))}')
+        if warn_unknown:
+          print(f'Warning: Unknown configuration: {'.'.join(path + (name,))}')
         continue
 
       #If the associated descriptor is a type, then the expected type of the initializer is given
@@ -71,7 +72,7 @@ class _nested_config:
 
       #Load the configuration initializer now. Recurse if nested.
       if isinstance(value, dict):
-        getattr(self, name).load(value, path + (name,))
+        getattr(self, name).load(value, warn_unknown, path + (name,))
       else:
         setattr(self, name, value)
 
@@ -92,6 +93,17 @@ class _nested_config:
         if not hasattr(self, name):
           setattr(self, name, desc)
 
+#List of on_load event callbacks
+_on_load_callbacks = []
+
+#Function decorator for registering on_load event callbacks
+def on_load(func):
+  _on_load_callbacks.append(func)
+  return func
+
+#Root configuration instance
+root = _nested_config()
+
 #Register new configurations with the module
 #Parameters:
 # - descriptors: A dictionary describing the structure of the configuration. Check the register
@@ -102,11 +114,12 @@ def register(descriptors: dict):
 #Load configurations from a .toml file
 #Parameters:
 # - toml_pathname: The pathname of the .toml file to load.
-def load(toml_pathname: str):
+def load(toml_pathname: str, warn_unknown: bool = True):
   with open(toml_pathname, 'rb') as f:
-    root.load(tomllib.load(f))
+    root.load(tomllib.load(f), warn_unknown)
 
   root.check_consistency()
 
-#Root configuration instance
-root = _nested_config()
+  #Trigger the on_load event
+  for callback in _on_load_callbacks:
+    callback()

@@ -14,7 +14,7 @@ from modules.model import hashes
 from modules.model import views
 from modules.mediawiki import api_client
 
-config.load('config.toml')
+config.load('config.toml', warn_unknown = False)
 db.go_without_flask()
 
 #Convert an ISO 8601 timestamp string into a unix timestamp
@@ -71,11 +71,12 @@ def update_image_index():
   query_params = {'action': 'query', 'generator': 'recentchanges', 'grcnamespace': 6,
                   'grcstart': last_timestamp, 'grcdir': 'newer', 'grclimit': 'max',
                   'prop': 'imageinfo', 'iiprop': 'timestamp|url', 'iilocalonly': 1,
-                  'iilimit': 'max',
-                  'XDEBUG_SESSION': '1'}
+                  'iilimit': 'max'}
 
   #Query the mediawiki server and process each parsed JSON block
   for result in api_client.query(query_params):
+    if 'query' not in result or 'pages' not in result['query']: continue
+
     for img in result['query']['pages'].values():
       if 'imageinfo' not in img:
         #The image has no revisions and has been erased
