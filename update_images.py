@@ -7,11 +7,7 @@ import PIL
 import io
 import imagehash
 from modules.common import config
-from modules.model import db
-from modules.model import images
-from modules.model import revisions
-from modules.model import hashes
-from modules.model import views
+from modules.model import db, images, revisions, hashes, unused_images, views
 from modules.mediawiki import api_client
 
 config.load('config.toml', warn_unknown = False)
@@ -55,7 +51,6 @@ def create_image_index():
 
     print(f'{img_count} images, {rev_count} revisions')
 
-  api_client.close()
   print('Done')
 
 #Update the existing image index if any, or create it otherwise
@@ -115,9 +110,9 @@ def update_image_index():
                              url = rev['url'])
             print(f'New revision: {img['title']}: {datetime.fromtimestamp(timestamp)}')
 
-  api_client.close()
   print('Done')
 
+#Download and calculate hashes for all images that haven't been hashed yet
 def update_hashes():
   print('Downloading images and calculating hashes...')
 

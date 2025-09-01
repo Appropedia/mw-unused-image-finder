@@ -1,53 +1,38 @@
-from urllib.parse import urlparse
-import http.client
-import json
+from collections.abc import Iterator
+from urllib3 import HTTPConnectionPool, HTTPSConnectionPool
 from modules.common import config
+from modules.mediawiki import config as mw_config
 
-config.register({
-  'mediawiki_server': {
-    'api': str,
-  }
-})
+#Perform initialization based on configuration
+@config.on_load
+def _on_load():
+  global _pool
 
-_conn = None
-
-#Close the client connection
-def close():
-  _conn.close()
+  #Create a connection pool based on the connection scheme
+  server = config.root.mediawiki_server.url
+  _pool = HTTPConnectionPool(server.hostname, server.port) if server.scheme == 'http' else\
+          HTTPSConnectionPool(server.hostname, server.port)
 
 #Create a generator object that performs continued queries to a mediawiki server
 #Parameters:
 # - params: A dictionary containing query parameters
-#Return value: The generator object
-def query(params: dict):
-  global _server
-  global _conn
-
-  #Create a new connection once (delayed due to the timing of configuration loading)
-  if _conn is None:
-    #Parse and validate the API URL
-    _server = urlparse(config.root.mediawiki_server.api)
-    if _server.scheme not in ('http', 'https') or _server.hostname is None or _server.path == '':
-      raise ValueError(f'Invalid URL for configuration mediawiki_server.api: '
-                       f'{config.root.mediawiki_server.api}')
-
-    _conn = http.client.HTTPConnection(_server.hostname) if _server.scheme == 'http' else\
-            http.client.HTTPSConnection(_server.hostname)
-
+#Return value: A generator object that returns dictionaries with response data
+def query(params: dict) -> Iterator[dict]:
   params['format'] = 'json'   #Make sure to request json format
 
   while True:
     #Perform the request and get the response
-    _conn.request('GET',
-                  _server.path + '?' + '&'.join(f'{key}={val}' for key, val in params.items()))
-    rsp = _conn.getresponse()
+    server = config.root.mediawiki_server.url
+    rsp = _pool.urlopen(
+      'GET',
+      server.path + '?' + '&'.join(f'{key}={val}' for key, val in params.items()))
 
     #Make sure the response is 200 - OK
     if rsp.status != 200:
       raise ConnectionError(f'Error code {rsp.status} - {rsp.reason}')
 
     #Read the response data, parse the JSON and yield it
-    rsp_data = json.loads(rsp.read())
+    rsp_data = rsp.json()
     yield rsp_data
 
     #Check whether there's a continue parameter in the structure

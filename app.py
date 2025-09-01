@@ -3,7 +3,7 @@
 from flask import Flask, render_template
 from modules.common import config
 from modules.model import db
-from modules.mediawiki import api_client, cors_proxy
+from modules.mediawiki import cors_proxy
 
 config.load('config.toml')
 
