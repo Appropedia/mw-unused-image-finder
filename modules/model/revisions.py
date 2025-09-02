@@ -9,6 +9,7 @@ def init_schema():
       'id INTEGER PRIMARY KEY, '
       'image_id INTEGER NOT NULL REFERENCES images(id) ON DELETE CASCADE, '
       'timestamp INTEGER NOT NULL, '
+      'size INTEGER, '
       'url STRING NOT NULL, '
       'UNIQUE(image_id, timestamp))')
 
@@ -39,7 +40,13 @@ def read_timestamps(image_id: int) -> Iterator[int]:
     if row is None: break
     yield row
 
-#Delete a revision given its unique fields
+#Update the size of an image revision
+def update_size(id_: int, size: int):
+  con = db.get()
+  con.execute('UPDATE revisions SET size = ? WHERE id = ?', (size, id_))
+  con.commit()
+
+#Delete a revision given its uniquely identifying fields
 def delete(image_id: int, timestamp: int):
   con = db.get()
   con.execute('DELETE FROM revisions WHERE image_id = ? AND timestamp = ?', (image_id, timestamp))

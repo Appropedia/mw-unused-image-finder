@@ -112,6 +112,34 @@ def update_image_index():
 
   print('Done')
 
+#Refresh the list of unused images
+def update_unused_images():
+  print('Updating unused images...')
+
+  #Create a scratch table for downloading the images
+  unused_images.create_temp_table()
+
+  query_params = {
+    'action': 'query', 'list': 'querypage', 'qppage': 'Unusedimages', 'qplimit': 'max',
+  }
+
+  img_count = 0
+
+  #Query the mediawiki server and process each parsed JSON block
+  for result in api_client.query(query_params):
+    querypage_results = result['query']['querypage']['results']
+
+    #Insert the images into the scratch table
+    unused_images.insert_into_temp_table(img['title'] for img in querypage_results)
+
+    img_count += len(querypage_results)
+    print(f'{img_count} unused images')
+
+  #The scratch table is completed. Update the unused images table with it.
+  unused_images.update_from_temp_table()
+
+  print('Done')
+
 #Download and calculate hashes for all images that haven't been hashed yet
 def update_hashes():
   print('Downloading images and calculating hashes...')
@@ -141,9 +169,13 @@ def update_hashes():
     if rsp.status != 200:
       raise ConnectionError(f'Error code {rsp.status} - {rsp.reason}')
 
+    #Read the data and store the image size
+    data = rsp.read()
+    revisions.update_size(revision_id, len(data))
+
     #Open the downloaded image with PIL
     try:
-      img = PIL.Image.open(io.BytesIO(rsp.read()))
+      img = PIL.Image.open(io.BytesIO(data))
     except PIL.UnidentifiedImageError:
       #The image file could not be recognized. Create a null hash in its place.
       hashes.create(revision_id, (None,) * 8)
@@ -169,6 +201,7 @@ def update_hashes():
 
 try:
   update_image_index()
+  update_unused_images()
   update_hashes()
 except KeyboardInterrupt:
   print()

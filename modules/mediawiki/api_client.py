@@ -35,17 +35,18 @@ def query(params: dict) -> Iterator[dict]:
     rsp_data = rsp.json()
     yield rsp_data
 
-    #Check whether there's a continue parameter in the structure
-    if 'continue' in rsp_data and 'continue' in rsp_data['continue']:
-      #Parse the continue parameter
-      continue_tokens = rsp_data['continue']['continue'].split('||')
-      if len(continue_tokens) == 2 and continue_tokens[0] != '-' and continue_tokens[1] == '':
-        #Parsing successful
-        continue_param = continue_tokens[0]
+    #Check whether there's a continue element in the structure
+    if 'continue' in rsp_data:
+      #The continuation parameter is any element that isn't called 'continue'
+      continue_param = None
+      for key in rsp_data['continue']:
+        if key != 'continue':
+          continue_param = key
+          break
 
-        #Add the continue parameter value to the request, if present
-        if continue_param in rsp_data['continue']:
-          params[continue_param] = rsp_data['continue'][continue_param]
-          continue
+      #Add the continue parameter value to the request, if present
+      if continue_param is not None:
+        params[continue_param] = rsp_data['continue'][continue_param]
+        continue
 
-    break   #No continuation, parsing failed or continue response not structured as expected
+    break   #No continuation or continue response not structured as expected
