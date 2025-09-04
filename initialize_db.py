@@ -6,7 +6,7 @@ from modules.model import images
 from modules.model import revisions
 from modules.model import hashes
 from modules.model import unused_images
-from modules.model import views
+from modules.model import db_views
 
 config.load('config.toml', warn_unknown = False)
 

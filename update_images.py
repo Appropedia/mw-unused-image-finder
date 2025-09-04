@@ -1,13 +1,12 @@
 #!/usr/bin/env -S sh -c 'cd $(dirname $0); python/bin/python -m $(basename ${0%.py}) $@'
 
 from datetime import datetime
-from urllib.parse import urlparse
-import http.client
+import urllib3
 import PIL
 import io
 import imagehash
 from modules.common import config
-from modules.model import db, images, revisions, hashes, unused_images, views
+from modules.model import db, images, revisions, hashes, unused_images, db_views
 from modules.mediawiki import api_client
 
 config.load('config.toml', warn_unknown = False)
@@ -144,33 +143,24 @@ def update_unused_images():
 def update_hashes():
   print('Downloading images and calculating hashes...')
 
+  #Create a connection pool for downloading
+  pool_mgr = urllib3.PoolManager()
+
   revision_count = 0
-  revision_total = views.pending_hash_total()
-  last_hostname = None
-  last_scheme = None
-  for revision_id, revision_url in views.pending_hashes():
+  revision_total = db_views.pending_hash_total()
+  for revision_id, revision_url in db_views.pending_hashes():
     revision_count += 1
 
-    #Parse the server url
-    server = urlparse(revision_url)
-
-    #Reuse the last connection if possible, otherwise create a new one (saves time)
-    if server.hostname != last_hostname or server.scheme != last_scheme:
-      conn = http.client.HTTPConnection(server.hostname) if server.scheme == 'http' else\
-             http.client.HTTPSConnection(server.hostname)
-      last_hostname = server.hostname
-      last_scheme = server.scheme
-
-    #Perform a request to download the image, then get the response
-    conn.request('GET', server.path)
-    rsp = conn.getresponse()
+    #Perform a request to download the image and get the response
+    rsp = pool_mgr.request('GET', revision_url)
 
     #Make sure the response is 200 - OK
     if rsp.status != 200:
-      raise ConnectionError(f'Error code {rsp.status} - {rsp.reason}')
+      print(f'{revision_count}/{revision_total} Error code {rsp.status} - {rsp.reason}: {revision_url}')
+      continue
 
     #Read the data and store the image size
-    data = rsp.read()
+    data = rsp.data
     revisions.update_size(revision_id, len(data))
 
     #Open the downloaded image with PIL
@@ -195,7 +185,6 @@ def update_hashes():
       hashes.create(revision_id, h)
 
     print(f'{revision_count}/{revision_total} {revision_url}')
-    conn.close()
 
   print('Done')
 

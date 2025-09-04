@@ -12,8 +12,11 @@ def init_schema():
 
   for j in range(8):
     con.execute(
-      f'CREATE INDEX IF NOT EXISTS hash_{j} ON hashes('
+      f'CREATE INDEX IF NOT EXISTS hashes_H{j} ON hashes('
       f'{', '.join(f'H{i}' for i in range(j + 1))})')
+
+  con.execute(
+    'CREATE INDEX IF NOT EXISTS hashes_revision_id ON hashes(revision_id)')
 
 #Create a new hash for a given image revision
 def create(revision_id: int, hash_: tuple):

@@ -4,7 +4,9 @@ from modules.model import db
 #Schema initialization function
 @db.schema
 def init_schema():
-  db.get().execute(
+  con = db.get()
+
+  con.execute(
     'CREATE TABLE IF NOT EXISTS revisions('
       'id INTEGER PRIMARY KEY, '
       'image_id INTEGER NOT NULL REFERENCES images(id) ON DELETE CASCADE, '
@@ -12,6 +14,9 @@ def init_schema():
       'size INTEGER, '
       'url STRING NOT NULL, '
       'UNIQUE(image_id, timestamp))')
+
+  con.execute(
+    'CREATE INDEX IF NOT EXISTS revisions_image_id ON revisions(image_id)')
 
 #Create a revision with the given data and return its id
 def create(image_id: int, timestamp: int, url: str) -> int:
