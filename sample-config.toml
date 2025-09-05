@@ -5,4 +5,5 @@
 #path = 'db.sqlite3'  #Default sqlite3 database file (consider moving to /var or similar)
 
 [mediawiki_server]
-#api =                #A server URL must be provided, example: 'https://www.example.com/w/api.php'
+#api =                #A server URL must be provided, like: 'https://www.example.com/w/api.php'
+#cors_proxy = false   #Whether to enable the Cross Origin Resource Sharing proxy

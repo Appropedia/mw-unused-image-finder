@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+  <head>
+    <title> File search </title>
+    <script src="{{url_for('static', filename='format_utils.js')}}"></script>
+  </head>
+  <body>
+    <form id="search_form" action="{{url_for('default.view')}}">
+      <div>
+        <label for="file_usage">Which files to search:</label>
+        <select id="file_usage" name="usage">
+          <option value="unused">Unused</option>
+          <option value="used">In use</option>
+          <option value="any">All</option>
+        </select>
+      </div>
+      <div id="size_note_div">
+        For files in use:
+      </div>
+      <div id="include_newest_div">
+        <input type="checkbox" id="include_newest" name="incl_newest" value="1">
+        <label for="include_newest">Include the most recent file revision in the results</label>
+      </div>
+      <div>
+        <label for="sort_by">Sort by:</label>
+        <select id="sort_by" name="sort_by">
+          <option value="all_rev_size">Size of all revisions</option>
+          <option value="max_rev_size">Size of largest revision</option>
+          <option value="title">Title</option>
+          <option value="timestamp">Revision date/time</option>
+        </select>
+      </div>
+      <div>
+        <input type="radio" id="sort_normal" name="order" value="normal">
+        <label for="sort_normal" id="sort_normal_label"></label>
+        <input type="radio" id="sort_reverse" name="order" value="reverse">
+        <label for="sort_reverse" id="sort_reverse_label"></label>
+      </div>
+      <div>
+        <input type="submit" value="Search">
+      </div>
+    </form>
+
+    <script>
+      const file_usage         = document.getElementById('file_usage');
+      const size_note_div      = document.getElementById('size_note_div');
+      const include_newest_div = document.getElementById('include_newest_div');
+      const sort_by            = document.getElementById('sort_by');
+      const sort_normal_label  = document.getElementById('sort_normal_label');
+      const sort_reverse_label = document.getElementById('sort_reverse_label');
+      const include_newest     = document.getElementById('include_newest');
+      const search_form        = document.getElementById('search_form');
+
+      //Show or hide fields depending on file usage
+      function update_file_usage() {
+        switch (file_usage.value) {
+          case 'unused':
+            size_note_div.style.display = 'none';
+            include_newest_div.style.display = 'none';
+            break;
+          case 'used':
+            size_note_div.style.display = 'none';
+            include_newest_div.style.display = 'block';
+            break;
+          case 'any':
+            size_note_div.style.display = 'block';
+            include_newest_div.style.display = 'block';
+            break;
+        }
+      }
+
+      //Set sort options to descriptive names
+      function update_sort_by() {
+        switch (sort_by.value) {
+          case 'all_rev_size':
+          case 'max_rev_size':
+            sort_normal_label.innerHTML = 'Largest first';
+            sort_reverse_label.innerHTML = 'Smallest first';
+            break;
+          case 'title':
+            sort_normal_label.innerHTML = 'Ascending';
+            sort_reverse_label.innerHTML = 'Descending';
+            break;
+          case 'timestamp':
+            sort_normal_label.innerHTML = 'Newest first';
+            sort_reverse_label.innerHTML = 'Oldest first';
+            break;
+        }
+      }
+
+      //Preserve previous selections and set defaults
+      {% if request.args['usage'] in ('unused', 'used', 'any') %}
+        file_usage.value = '{{request.args['usage']}}';
+      {% else %}
+        file_usage.value = 'unused';
+      {% endif %}
+
+      include_newest.checked = {{'true' if 'incl_newest' in request.args else 'false'}};
+
+      {% if request.args['sort_by'] in ('all_rev_size', 'max_rev_size', 'title', 'timestamp') %}
+        sort_by.value = '{{request.args['sort_by']}}';
+      {% else %}
+        sort_by.value = 'all_rev_size';
+      {% endif %}
+
+      {% if request.args['order'] == 'reverse' %}
+        sort_reverse.checked = true;
+      {% else %}
+        sort_normal.checked = true;
+      {% endif %}
+
+      //Update dynamic elements on load
+      update_file_usage();
+      update_sort_by();
+
+      //Add event listeners for dynamic elements
+      file_usage.addEventListener('change', update_file_usage);
+      sort_by.addEventListener('change', update_sort_by);
+
+      //Remove hidden fields from the query
+      search_form.addEventListener('submit', () => {
+        if (include_newest_div.style.display == 'none')
+          include_newest.checked = false;
+      })
+    </script>
+
+    {# Render the search results as a table, if available #}
+    {% if search_results %}
+      <style>
+        table, th, td {
+          border: 1px solid black;
+          border-collapse: collapse;
+        }
+      </style>
+      <table id='results_table'>
+        <tr>
+          <th>Title</th>
+          <th>Last update</th>
+          <th>Total revisions</th>
+          <th>All revisions</th>
+          <th>Largest revision</th>
+        </tr>
+        {% for row in search_results %}
+          <tr>
+            <td>{{row[0]}}</td>
+            <td>{{row[1]}}</td>
+            <td>{{row[2]}}</td>
+            <td>{{row[3]}}</td>
+            <td>{{row[4]}}</td>
+          </tr>
+        {% endfor %}
+      </table>
+      <script>
+        //Format table timestamps as local dates and add binary prefixes to file sizes
+        const table = document.getElementById('results_table');
+        for (let i = 1; i < table.rows.length; i++) {
+          const cells = table.rows[i].cells;
+          cells[1].textContent = format_local_datetime(cells[1].textContent);
+          cells[3].textContent = format_storage_units(cells[3].textContent);
+          cells[4].textContent = format_storage_units(cells[4].textContent);
+        }
+      </script>
+    {% endif %}
+
+    {# Render the response message, if available #}
+    {% if message %}
+      <p style="color: red;">{{message}}</p>
+    {% endif %}
+  </body>
+</html>
