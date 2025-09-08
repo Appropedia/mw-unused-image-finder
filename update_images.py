@@ -1,6 +1,7 @@
 #!/usr/bin/env -S sh -c 'cd $(dirname $0); python/bin/python -m $(basename ${0%.py}) $@'
 
 from datetime import datetime
+from argparse import ArgumentParser
 import urllib3
 import PIL
 import io
@@ -188,10 +189,19 @@ def update_hashes():
 
   print('Done')
 
+#Register and parse program arguments
+parser = ArgumentParser()
+parser.add_argument('-ji', '--just-indexes',
+                    action = 'store_true',
+                    help = 'Update the image indexes only (prevent downloading images for hashing)')
+args = parser.parse_args()
+
 try:
   update_image_index()
   update_unused_images()
-  update_hashes()
+
+  if not args.just_indexes:
+    update_hashes()
 except KeyboardInterrupt:
   print()
 except:
