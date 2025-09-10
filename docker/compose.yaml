@@ -1,0 +1,22 @@
+name: mw-unused-image-finder
+
+services:
+  web-server:
+    build:
+      #Build using the files from the parent directory
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      #Map the server to host port 8080 by default - override by setting SERVER_BIND in environment
+      - ${SERVER_BIND:-127.0.0.1:8080}:80
+    volumes:
+      #Create a volume for the database
+      - database:/var/lib/mw-unused-image-finder
+    logging:
+      #The local logging driver provides log rotation and limits space usage by default
+      driver: local
+    #Enable the init process so child processes can be reaped
+    init: true
+
+volumes:
+  database:
