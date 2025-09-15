@@ -16,6 +16,7 @@ from urllib3 import HTTPConnectionPool, HTTPSConnectionPool
 from modules.common import config
 from modules.mediawiki import config as mw_config
 
+#Register module configurations
 config.register({
   'mediawiki_server': {
     'cors_proxy': False,

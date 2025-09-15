@@ -1,6 +1,7 @@
 from modules.common import config
 from urllib.parse import urlparse
 
+#Register module configurations
 config.register({
   'mediawiki_server': {
     'api': str,

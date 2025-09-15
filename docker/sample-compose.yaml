@@ -3,12 +3,16 @@ name: mw-unused-image-finder
 services:
   web-server:
     build:
-      #Build using the files from the parent directory
-      context: ..
-      dockerfile: docker/Dockerfile
+      #Use the dockerfile provided in the repo
+      dockerfile: mw-unused-image-finder/docker/Dockerfile
+      args:
+        #Set the relative path to the repo so sources can be found
+        - SRC_DIR=mw-unused-image-finder
+        #Set the path to the configuration file
+        - CONFIG_FILE=config.toml
     ports:
-      #Map the server to host port 8080 by default - override by setting SERVER_BIND in environment
-      - ${SERVER_BIND:-127.0.0.1:8080}:80
+      #Map the server to host port 8080
+      - 127.0.0.1:8080:80
     volumes:
       #Create a volume for the database
       - database:/var/lib/mw-unused-image-finder

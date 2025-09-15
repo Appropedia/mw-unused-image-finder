@@ -2,36 +2,30 @@ FROM alpine:latest
 
 #Install dependencies
 RUN apk add python3
+RUN apk add imagemagick
+RUN apk add libjpeg-turbo
 
 #Change to the installation directory
 ARG APP_NAME="mw-unused-image-finder"
 WORKDIR /$APP_NAME
 
 #Setup the python virtual environment
+ARG SRC_DIR
 ENV PYTHONUNBUFFERED=1
-RUN --mount=source=setup-python.sh,target=setup-python.sh ./setup-python.sh
+RUN --mount=source=$SRC_DIR/setup-python.sh,target=setup-python.sh ./setup-python.sh
 RUN python/bin/pip install gunicorn
 
-#Make sure the mediawiki API URL is provided
-ARG MEDIAWIKI_API
-RUN if [ -z "$MEDIAWIKI_API" ]; then \
-  echo "MEDIAWIKI_API build argument is missing";\
+#Make sure the configuration file is provided
+ARG CONFIG_FILE
+RUN if [ -z "$CONFIG_FILE" ]; then \
+  echo "CONFIG_FILE build argument is missing";\
   exit 1;\
 fi
 
-#Also make sure that a CORS setting is provided
-ARG CORS_PROXY
-RUN if [ -z "$CORS_PROXY" ]; then \
-  echo "CORS_PROXY build argument is missing";\
-  exit 1;\
-fi
-
-#Create the configuration file
-RUN cat <<EOF > config.toml
-[mediawiki_server]
-api = '$MEDIAWIKI_API'
-cors_proxy = $CORS_PROXY
-
+#Copy the provided configuration file, then overlay the database path configuration
+COPY $CONFIG_FILE config.toml
+RUN --mount=source=$SRC_DIR/docker/overlay_config.py,target=overlay_config.py\
+    python/bin/python -m overlay_config config.toml - <<EOF
 [sqlite3]
 path = '/var/lib/$APP_NAME/db.sqlite3'
 EOF
@@ -63,13 +57,15 @@ exit $?
 EOF
 
 #Install the server application files
-COPY app.py update_images.py ./
-COPY modules modules/
-COPY templates templates/
+COPY $SRC_DIR/app.py $SRC_DIR/update_images.py ./
+COPY $SRC_DIR/modules modules/
+COPY $SRC_DIR/templates templates/
+COPY $SRC_DIR/assets assets/
 
 #Set up a volume for the database and then initialize it
 RUN mkdir /var/lib/$APP_NAME
 VOLUME /var/lib/$APP_NAME
-RUN --mount=source=initialize_db.py,target=initialize_db.py python/bin/python -m initialize_db
+RUN --mount=source=$SRC_DIR/initialize_db.py,target=initialize_db.py\
+    python/bin/python -m initialize_db
 
 CMD ["./init.sh"]

@@ -3,12 +3,10 @@
 from datetime import datetime
 from argparse import ArgumentParser
 import urllib3
-import PIL
-import io
-import imagehash
 from modules.common import config
 from modules.model import db, images, revisions, hashes, unused_images, db_views
 from modules.mediawiki import api_client
+from modules.utility import perceptual_hash
 
 config.load('config.toml', warn_unknown = False)
 db.go_without_flask()
@@ -144,48 +142,47 @@ def update_unused_images():
 def update_hashes():
   print('Downloading images and calculating hashes...')
 
-  #Create a connection pool for downloading
+  #Create a connection pool for downloading. Only one download is performed at a time, but
+  #preserving open connections to potentially multiple servers might become useful for faster
+  #download times.
   pool_mgr = urllib3.PoolManager()
 
   revision_count = 0
   revision_total = db_views.pending_hash_total()
   for revision_id, revision_url in db_views.pending_hashes():
     revision_count += 1
+    print(f'{revision_count}/{revision_total} {revision_url} => ', end = '')
 
     #Perform a request to download the image and get the response
-    rsp = pool_mgr.request('GET', revision_url)
+    rsp = pool_mgr.request('GET', revision_url, preload_content = False)
 
     #Make sure the response is 200 - OK
     if rsp.status != 200:
-      print(f'{revision_count}/{revision_total} Error code {rsp.status} - {rsp.reason}: {revision_url}')
+      print(f'Error code {rsp.status} - {rsp.reason}')
       continue
 
-    #Read the data and store the image size
-    data = rsp.data
-    revisions.update_size(revision_id, len(data))
+    #Use the response stream to download, calculate the hashes of the image and obtain its size
+    status, file_size, new_hashes = perceptual_hash.calculate_phashes(rsp.stream())
 
-    #Open the downloaded image with PIL
-    try:
-      img = PIL.Image.open(io.BytesIO(data))
-    except PIL.UnidentifiedImageError:
-      #The image file could not be recognized. Create a null hash in its place.
-      hashes.create(revision_id, (None,) * 8)
-      print(f'{revision_count}/{revision_total} Not a recognized image file: {revision_url}')
-      continue
+    #Store the file size first
+    revisions.update_size(revision_id, file_size)
 
-    #Calculate the hash for every 90 degreee rotation of this image, then structure it as individual
-    #bytes in a tuple
-    new_hashes = set()  #Use a set to reduce the hashes of images with rotational symmetry
-    for angle in range(0, 360, 90):
-      string_hash = str(imagehash.phash(img.rotate(angle, expand = True)))
-      tuple_hash = tuple(int(string_hash[i: i+2], 16) for i in range(0, len(string_hash), 2))
-      new_hashes.update(set((tuple_hash,)))
-
-    #Store the hashes
-    for h in new_hashes:
-      hashes.create(revision_id, h)
-
-    print(f'{revision_count}/{revision_total} {revision_url}')
+    match status:
+      case perceptual_hash.status.OK:
+        #Store the hashes now. Do this as the last step, as this effectively removes the image from
+        #the pending hashes view.
+        for h in new_hashes:
+          hashes.create(revision_id, h)
+        print('OK')
+      case perceptual_hash.status.OUT_OF_MEM:
+        #There was not enough memory for processing the image. Don't store a hash, so this can be
+        #retried later for this image.
+        print('Not enough memory')
+      case perceptual_hash.status.UNSUPPORTED:
+        #The image could not be processed, possibly because its type is unsupported or there was
+        #another error. Store a null hash for it, so it won't be retried.
+        hashes.create(revision_id, (None,) * 8)
+        print('Not a recognized image file')
 
   print('Done')
 
