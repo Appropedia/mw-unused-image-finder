@@ -4,7 +4,8 @@ from datetime import datetime
 from argparse import ArgumentParser
 import urllib3
 from modules.common import config
-from modules.model import db, images, revisions, hashes, unused_images, db_views
+from modules.model import db, images, revisions, hashes, unused_images
+from modules.model.view import pending_hashes
 from modules.mediawiki import api_client
 from modules.utility import perceptual_hash
 
@@ -148,8 +149,8 @@ def update_hashes():
   pool_mgr = urllib3.PoolManager()
 
   revision_count = 0
-  revision_total = db_views.pending_hash_total()
-  for revision_id, revision_url in db_views.pending_hashes():
+  revision_total = pending_hashes.total()
+  for revision_id, revision_url in pending_hashes.get():
     revision_count += 1
     print(f'{revision_count}/{revision_total} {revision_url} => ', end = '')
 

@@ -6,7 +6,9 @@ from modules.model import images
 from modules.model import revisions
 from modules.model import hashes
 from modules.model import unused_images
-from modules.model import db_views
+from modules.model.view import pending_hashes
+from modules.model.view import image_usage
+from modules.model.view import similar_images
 
 config.load('config.toml', warn_unknown = False)
 
