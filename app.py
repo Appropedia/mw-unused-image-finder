@@ -4,7 +4,8 @@ from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 from modules.common import config
 from modules.mediawiki import cors_proxy
-from modules.controller import default
+from modules.controller import main
+from modules.controller.development import file_search, file_info
 from modules.model import db
 
 #Register module configurations
@@ -21,7 +22,9 @@ config.load('config.toml')
 #Create the Flask application object and register all blueprints
 app = Flask(__name__, static_folder = 'assets')
 app.register_blueprint(cors_proxy.blueprint)
-app.register_blueprint(default.blueprint)
+app.register_blueprint(main.blueprint)
+app.register_blueprint(file_search.blueprint, url_prefix = '/development')
+app.register_blueprint(file_info.blueprint, url_prefix = '/development')
 
 #Configure jinja stripping
 app.jinja_env.trim_blocks = True

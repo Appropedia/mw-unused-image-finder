@@ -1,11 +1,5 @@
-//Format a unix timestamp as a local datetime
-function format_local_datetime(timestamp) {
-  const date = new Date(timestamp * 1000);
-  return date.toLocaleString();
-}
-
 //Format a number representing a storage size to use binary prefixes
-function format_storage_units(value) {
+export function format_storage_units(value) {
   value = parseInt(value);
 
   //The value.toPrecision(4) function call below adds trailing zeroes to integer values, which can

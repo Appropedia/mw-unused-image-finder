@@ -37,8 +37,18 @@ def read_last_timestamp() -> int | None:
 #Create an iterator object that returns the timestamps associated to the revisions of a given image
 def read_timestamps(image_id: int) -> Iterator[int]:
   cursor = db.get().cursor()
-  cursor.row_factory = lambda cur, row: row[0]
   cursor.execute('SELECT timestamp FROM revisions WHERE image_id = ?', (image_id,))
+
+  while True:
+    row = cursor.fetchone()
+    if row is None: break
+    yield row[0]
+
+#Create an iterator object that returns the timestamps and sizes associated to the revisions of a
+#given image
+def read_timestamps_and_sizes(image_id: int) -> Iterator[tuple[int, int]]:
+  cursor = db.get().cursor()
+  cursor.execute('SELECT timestamp, size FROM revisions WHERE image_id = ?', (image_id,))
 
   while True:
     row = cursor.fetchone()

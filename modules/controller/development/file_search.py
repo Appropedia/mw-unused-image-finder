@@ -1,14 +1,14 @@
 from flask import Blueprint, request, render_template
 from modules.model.view import image_usage
 
-blueprint = Blueprint('default', __name__)
+blueprint = Blueprint('file_search', __name__)
 
-#Route handler for the default view
-@blueprint.route('/')
+#Route handler for the file search view
+@blueprint.route('/file_search')
 def view():
   search_output = do_search(request.args)
 
-  return render_template('default.html.jinja', **search_output)
+  return render_template('development/file_search.html.jinja', **search_output)
 
 #Perform an image search, if requested.
 #Parameters:
