@@ -1,21 +1,18 @@
-+--------------------+         +------------------------+
-|       images       |         |       revisions        |
-+--------------------+         +------------------------+
-| id     integer  PK |---------| id         integer  PK |
-| title  string      |1    1..*| image_id   integer  FK |
-+--------------------+         | timestamp  integer     |
-                               | size       integer     |
-                               | url        string      |
-                               +------------------------+
-+--------------------------+               | 1
-|          hashes          |               |
-+--------------------------+               |
-| revision_id  integer  FK |---------------+
-| H0..H7       int8        | 0..4
-+--------------------------+
++--------------------+             +------------------------+         +--------------------------+
+|       images       |             |       revisions        |         |          hashes          |
++--------------------+             +------------------------+         +--------------------------+
+| id     integer  PK |-------------| id         integer  PK |---------| revision_id  integer  FK |
+| title  text        |1        1..*| image_id   integer  FK |1    0..4| H0..H7       int8        |
+|                    |             | timestamp  text        |         +--------------------------+
+| { unique(title) }  |             | size       integer     |
++--------------------+             | url        text        |
+                                   |                        |
+                                   | { unique(image_id,     |
+                                   |          timestamp) }  |
+                                   +------------------------+
 
 +---------------+
 | unused_images |
 +---------------+
-| title  string |
+| title  text   |
 +---------------+

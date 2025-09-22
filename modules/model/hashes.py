@@ -20,12 +20,11 @@ def init_schema():
 
 #Create a new hash for a given image revision
 def create(revision_id: int, hash_: tuple):
-  con = db.get()
-  con.execute(
-    f'INSERT INTO hashes(revision_id, {', '.join(f'H{i}' for i in range(8))}) '
-    f'VALUES ({', '.join('?' * 9)})',
-    (revision_id,) + hash_)
-  con.commit()
+  with db.get() as con:
+    con.execute(
+      f'INSERT INTO hashes (revision_id, {', '.join(f'H{i}' for i in range(8))}) '
+      f'VALUES ({', '.join('?' * 9)})',
+      (revision_id,) + hash_)
 
 #Perform a recursive depth-first search on all image hashes in the table that are within a maximum
 #hamming distance from a given reference hash

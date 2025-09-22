@@ -1,15 +1,9 @@
 import { do_api_query } from '../mediawiki_api_client.js';
 
-//Format a unix timestamp as a local datetime
-export function format_local_datetime(timestamp) {
-  const date = new Date(timestamp * 1000);
-  return date.toLocaleString();
-}
-
-//Convert an ISO timestamp into a unix timestamp
-export function iso_to_unix(iso_datetime) {
+//Format an ISO timestamp as a local datetime
+export function format_local_datetime(iso_datetime) {
   const date = new Date(iso_datetime);
-  return date.getTime() / 1000;
+  return date.toLocaleString();
 }
 
 //

@@ -36,7 +36,7 @@
     </table>
 
     <script type=module>
-      import { format_local_datetime, iso_to_unix, query_image_info, query_similar_image_info }
+      import { format_local_datetime, query_image_info, query_similar_image_info }
       from '{{url_for('static', filename='development/file_info.js')}}';
 
       import { format_storage_units }
@@ -75,7 +75,7 @@
 
           // console.log(results);
           for (const r of results) {
-            // console.log(iso_to_unix(r.timestamp), rev.similar_images.map(i=>i.timestamp));
+            // console.log(r.timestamp, rev.similar_images.map(i=>i.timestamp));
             const div = new_row.cells[4].appendChild(document.createElement('div'));
             const img = div.appendChild(document.createElement('img'));
             img.src = r.thumburl;
@@ -94,21 +94,19 @@
 
           //Iterate over the revision data
           for (const wiki_rev of results.revisions) {
-            const unix_timestamp = iso_to_unix(wiki_rev.timestamp);
-
             //Fill the revision data if a row can hold it
-            if (unix_timestamp in rows) {
+            if (wiki_rev.timestamp in rows) {
               //Fill the image dimensions, if available
               if ('width' in wiki_rev && 'height' in wiki_rev) {
-                rows[unix_timestamp].cells[2].textContent =
+                rows[wiki_rev.timestamp].cells[2].textContent =
                   `${wiki_rev.width} x ${wiki_rev.height}`;
               }
               else {
-                rows[unix_timestamp].cells[2].textContent = not_available_label;
+                rows[wiki_rev.timestamp].cells[2].textContent = not_available_label;
               }
 
               //Fill the thumbnail
-              const img = rows[unix_timestamp].cells[3].appendChild(document.createElement('img'));
+              const img = rows[wiki_rev.timestamp].cells[3].appendChild(document.createElement('img'));
               img.src = wiki_rev.thumburl;
             }
           }

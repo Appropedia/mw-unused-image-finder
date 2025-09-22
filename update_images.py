@@ -12,60 +12,82 @@ from modules.utility import perceptual_hash
 config.load('config.toml', warn_unknown = False)
 db.go_without_flask()
 
-#Convert an ISO 8601 timestamp string into a unix timestamp
-def iso_to_unix(iso: str) -> int:
-  return int(datetime.fromisoformat(iso).timestamp())
-
-#Create a new image index and store it in the image and revision tables
-def create_image_index():
-  print ('Downloading initial image indexes...')
+#Create (or recreate) the complete image index and store it in the image and revision tables
+def refresh_full_image_index(first_time: bool):
+  if first_time: print('Creating initial image index...')
+  else:          print('Refreshing full image index...')
 
   query_params = {'action': 'query', 'generator': 'allimages', 'gailimit': 'max',
                   'prop': 'imageinfo', 'iiprop': 'timestamp|url', 'iilimit': 'max'}
 
+  #Start a full synchronization process for the revisions
+  revisions.synchronize_begin()
   img_count = 0
   rev_count = 0
 
   #Query the mediawiki server and process each parsed JSON block
   for result in api_client.query(query_params):
     for img in result['query']['pages'].values():
+      #Create or read an id for the current image
+      image_id = images.create_read_id(title = img['title'])
+
       for rev in img['imageinfo']:
         #Files without timestamp or url might be missing, so avoid them
-        if 'timestamp' in rev and 'url' in rev:
-          #Convert the timestamp to unix, then create or read an id for the current image and then
-          #add the revision
-          timestamp = iso_to_unix(rev['timestamp'])
-          image_id = images.create_read_id(title = img['title'])
-          revision_id = revisions.create(image_id = image_id,
-                                         timestamp = timestamp,
-                                         url = rev['url'])
+        if 'timestamp' not in rev or 'url' not in rev:
+          continue
 
-          #Track successful imports
-          if revision_id is not None:
+        #Add each revision to the synchronization process
+        is_new = revisions.synchronize_add_one(image_id = image_id,
+                                               timestamp = rev['timestamp'],
+                                               url = rev['url'])
+
+        #Track successful imports
+        if first_time:
+          if is_new:
             rev_count += 1
           else:
             print(f'Warning: duplicate image revision: "{img['title']}" - {rev['timestamp']}')
+        else:
+          rev_count += 1
+          if is_new:
+            print(f'Added: "{img['title']}" - {rev['timestamp']}')
 
       img_count += 1
 
     print(f'{img_count} images, {rev_count} revisions')
 
+  #Show deletions caused by the full synchronization process
+  for image_id, timestamp in revisions.full_synchronize_get_deletions():
+    print(f'Removed: "{images.read_title(image_id)}" - {timestamp}')
+
+  #Finish the full synchronization process and then prune images without revisions
+  revisions.full_synchronize_end()
+  images.delete_revision_lacking()
+
   print('Done')
 
 #Update the existing image index if any, or create it otherwise
-def update_image_index():
+def update_image_index(full_index: bool):
   last_timestamp = revisions.read_last_timestamp()
 
   if last_timestamp is None:
     #The revisions table is not populated yet. Create a new index instead.
-    return create_image_index()
+    refresh_full_image_index(first_time = True)
+    return
+  elif full_index == True:
+    #A full index refresh has been requested
+    refresh_full_image_index(first_time = False)
+    return
 
-  print ('Updating image indexes...')
+  print ('Updating image index...')
 
   query_params = {'action': 'query', 'generator': 'recentchanges', 'grcnamespace': 6,
                   'grcstart': last_timestamp, 'grcdir': 'newer', 'grclimit': 'max',
                   'prop': 'imageinfo', 'iiprop': 'timestamp|url', 'iilocalonly': 1,
                   'iilimit': 'max'}
+
+  #Start a partial synchronization process for the revisions
+  revisions.synchronize_begin()
 
   #Query the mediawiki server and process each parsed JSON block
   for result in api_client.query(query_params):
@@ -73,41 +95,28 @@ def update_image_index():
 
     for img in result['query']['pages'].values():
       if 'imageinfo' not in img:
-        #The image has no revisions and has been erased
-        print(f'Deleted image: {img['title']}')
+        #The image has no revisions and has been removed
+        print(f'Removed: "{img['title']}"')
         images.delete(title = img['title'])
       else:
         #The image has revisions. Create or read an id for it.
         image_id = images.create_read_id(title = img['title'])
 
-        #Get all current timestamps associated to the image from the result. Those are potential
-        #candidates for addition. The deletion candidates will be determined next.
-        timestamps_to_add = [iso_to_unix(x['timestamp']) for x in img['imageinfo']]
-        timestamps_to_del = []
-
-        #Match all stored timestamps associated to the image against the current ones
-        for stored_timestamp in revisions.read_timestamps(image_id = image_id):
-          if stored_timestamp in timestamps_to_add:
-            #The timestamp is stored already
-            timestamps_to_add.remove(stored_timestamp)
-          else:
-            #The stored timestamp is not in the current ones anymore
-            timestamps_to_del.append(stored_timestamp)
-
-        #Remove all deletion candidates
-        for timestamp in timestamps_to_del:
-          revisions.delete(image_id = image_id,
-                           timestamp = timestamp)
-          print(f'Deleted revision: {img['title']}: {datetime.fromtimestamp(timestamp)}')
-
-        #Create all addition candidates
         for rev in img['imageinfo']:
-          timestamp = iso_to_unix(rev['timestamp'])
-          if timestamp in timestamps_to_add:
-            revisions.create(image_id = image_id,
-                             timestamp = timestamp,
-                             url = rev['url'])
-            print(f'New revision: {img['title']}: {datetime.fromtimestamp(timestamp)}')
+          #Add each revision to the synchronization process
+          is_new = revisions.synchronize_add_one(image_id = image_id,
+                                                 timestamp = rev['timestamp'],
+                                                 url = rev['url'])
+
+          if is_new:
+            print(f'Added: "{img['title']}" - {rev['timestamp']}')
+
+  #Show deletions caused by the partial synchronization process
+  for image_id, timestamp in revisions.partial_synchronize_get_deletions():
+    print(f'Removed: "{images.read_title(image_id)}" - {timestamp}')
+
+  #Finish the partial synchronization process
+  revisions.partial_synchronize_end()
 
   print('Done')
 
@@ -116,7 +125,7 @@ def update_unused_images():
   print('Updating unused images...')
 
   #Create a scratch table for downloading the images
-  unused_images.create_temp_table()
+  unused_images.synchronize_begin()
 
   query_params = {
     'action': 'query', 'list': 'querypage', 'qppage': 'Unusedimages', 'qplimit': 'max',
@@ -129,13 +138,13 @@ def update_unused_images():
     querypage_results = result['query']['querypage']['results']
 
     #Insert the images into the scratch table
-    unused_images.insert_into_temp_table(img['title'] for img in querypage_results)
+    unused_images.synchronize_add_many(img['title'] for img in querypage_results)
 
     img_count += len(querypage_results)
     print(f'{img_count} unused images')
 
   #The scratch table is completed. Update the unused images table with it.
-  unused_images.update_from_temp_table()
+  unused_images.synchronize_end()
 
   print('Done')
 
@@ -189,18 +198,19 @@ def update_hashes():
 
 #Register and parse program arguments
 parser = ArgumentParser()
-parser.add_argument('-ji', '--just-indexes',
+parser.add_argument('-fi', '--full-index',
                     action = 'store_true',
-                    help = 'Update the image indexes only (prevent downloading images for hashing)')
+                    help = 'Forcefully update the full image index (fixes desynchronizations)')
+parser.add_argument('-ji', '--just-index',
+                    action = 'store_true',
+                    help = 'Update the image index only (prevent downloading images for hashing)')
 args = parser.parse_args()
 
 try:
-  update_image_index()
+  update_image_index(full_index = args.full_index)
   update_unused_images()
 
-  if not args.just_indexes:
+  if not args.just_index:
     update_hashes()
 except KeyboardInterrupt:
   print()
-except:
-  raise

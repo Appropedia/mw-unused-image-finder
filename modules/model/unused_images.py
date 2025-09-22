@@ -6,25 +6,23 @@ from modules.model import db
 def init_schema():
   db.get().execute(
     'CREATE TABLE IF NOT EXISTS unused_images('
-      'title STRING UNIQUE NOT NULL)')
+      'title TEXT UNIQUE NOT NULL)')
 
 #Create an scratch table for registering new unused images
-def create_temp_table():
+def synchronize_begin():
   db.get().execute(
     'CREATE TEMPORARY TABLE new_unused_images('
-      'title STRING UNIQUE NOT NULL)')
+      'title TEXT UNIQUE NOT NULL)')
 
 #Insert a group of image titles into the scratch table
-def insert_into_temp_table(titles: Iterable[str]):
-  con = db.get()
-  con.executemany('INSERT INTO new_unused_images(title) VALUES (?)',
-                  ((t,) for t in titles))
-  con.commit()
+def synchronize_add_many(titles: Iterable[str]):
+  with db.get() as con:
+    con.executemany('INSERT INTO new_unused_images (title) VALUES (?)',
+                    ((t,) for t in titles))
 
 #Update the unused_images table using the scratch table
-def update_from_temp_table():
-  con = db.get()
-  con.execute('BEGIN TRANSACTION')
-  con.execute('DELETE FROM unused_images')
-  con.execute('INSERT INTO unused_images(title) SELECT title FROM new_unused_images')
-  con.commit()
+def synchronize_end():
+  with db.get() as con:
+    con.execute('DELETE FROM unused_images')
+    con.execute('INSERT INTO unused_images (title) SELECT title FROM new_unused_images')
+    con.execute('DROP TABLE new_unused_images')
