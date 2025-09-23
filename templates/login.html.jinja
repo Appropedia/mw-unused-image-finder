@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+  <head>
+    <title> Log in </title>
+  </head>
+  <body>
+    <p>Welcome to the MediaWiki cleanup assistant!</p>
+
+    <form action="{{url_for('session_control.login')}}" method="post">
+      <div>
+        <label for="user_name">User name:</label>
+        <input id="user_name" name="user_name" required>
+      </div>
+      <div>
+        <label for="user_password">Password:</label>
+        <input type="password" id="user_password" name="user_password" required>
+      </div>
+      <div>
+        <button type="submit">Log in</button>
+      </div>
+    {% for message in get_flashed_messages() %}
+      <div style="color: red">{{message}}</div>
+    {% endfor %}
+    </form>
+  </body>
+</html>

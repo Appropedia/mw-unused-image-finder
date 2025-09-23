@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+  <head>
+    <title> Administrator account setup </title>
+  </head>
+  <body>
+    <p>Welcome to the MediaWiki cleanup assistant!</p>
+
+    <p> This is yout first time running the server apllication. Please create an administrator
+    account.</p>
+
+    <form action="{{url_for('admin_setup.view')}}" method="post">
+      <div>
+        <label for="user_name">Administrator user name:</label>
+        <input id="user_name" name="user_name" required>
+      </div>
+      <div>
+        <label for="user_password">Administrator password:</label>
+        <input type="password" id="user_password" name="user_password" required>
+      </div>
+      <div>
+        <label for="confirmed_password">Confirm password:</label>
+        <input type="password" id="confirmed_password" name="confirmed_password" required>
+      </div>
+      <div>
+        <button type="submit">Create</button>
+      </div>
+    {% for message in get_flashed_messages() %}
+      <div style="color: red">{{message}}</div>
+    {% endfor %}
+    </form>
+  </body>
+</html>

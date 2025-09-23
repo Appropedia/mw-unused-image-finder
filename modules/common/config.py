@@ -1,3 +1,4 @@
+from collections.abc import Callable
 import tomllib
 
 #Nested-configuration handler class
@@ -97,7 +98,7 @@ class _nested_config:
 _on_load_callbacks = []
 
 #Function decorator for registering on_load event callbacks
-def on_load(func):
+def on_load(func: Callable):
   _on_load_callbacks.append(func)
   return func
 

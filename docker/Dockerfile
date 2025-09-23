@@ -28,6 +28,9 @@ RUN --mount=source=$SRC_DIR/docker/overlay_config.py,target=overlay_config.py\
     python/bin/python -m overlay_config config.toml - <<EOF
 [sqlite3]
 path = '/var/lib/$APP_NAME/db.sqlite3'
+
+[security]
+flask_secret_key_file = '/var/lib/$APP_NAME/flask_secret_key.bin'
 EOF
 
 #Set up crond to run the update script at boot and then periodically

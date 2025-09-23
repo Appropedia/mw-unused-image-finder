@@ -4,6 +4,12 @@
     <title> Main menu </title>
   </head>
   <body>
+    <div style="text-align: right;">
+      <a href="{{url_for('session_control.logout')}}">Log out</a>
+    </div>
+
+    <hr>
+
     <p>Welcome to the MediaWiki cleanup assistant!</p>
 
     <p> Please select a cleanup strategy. Files will be selected automatically for you based on the
@@ -29,6 +35,9 @@
     - List of audited files (auditors only)
     - Registered users (admin only)
 #}
+  {% for message in get_flashed_messages() %}
+    <div style="color: red">{{message}}</div>
+  {% endfor %}
   </body>
 </html>
 

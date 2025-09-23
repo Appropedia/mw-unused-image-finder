@@ -1,3 +1,4 @@
+from collections.abc import Callable
 import sqlite3
 from flask import g
 from modules.common import config
@@ -40,7 +41,7 @@ def close():
 _schema_functions = []  #List of schema initialization functions
 
 #Function decorator for registering schema initialization functions
-def schema(func):
+def schema(func: Callable):
   _schema_functions.append(func)
   return func
 

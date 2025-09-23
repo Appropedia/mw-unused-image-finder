@@ -12,5 +12,8 @@
 #resolution_limit = 10000000   #Downscale images to this if larger before hashing (10000000 = 10MP)
 #image_magick_max_mem = ''     #Maximum amount of RAM allowed to ImageMagick (example: '256MiB')
 
+[security]
+#flask_secret_key_file = 'flask_secret_key.bin'   #Flask secret key file for user sessions
+
 [reverse_proxy]
 # enabled = false     #Enable if this application is exposed by a web server in reverse_proxy mode

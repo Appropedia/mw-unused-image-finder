@@ -7,7 +7,7 @@ blueprint = Blueprint('file_info', __name__)
 
 #Route handler for the image information view
 @blueprint.route('/file_info/<image_title>')
-def view(image_title):
+def view(image_title: str):
   image_id = images.read_id(image_title)
   if image_id is None:
     abort(404)

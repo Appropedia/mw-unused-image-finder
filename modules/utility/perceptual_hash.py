@@ -1,5 +1,5 @@
 import enum
-from typing import Iterator
+from collections.abc import Iterator
 import subprocess, threading, queue, sys
 import PIL, io, imagehash
 from modules.common import config
