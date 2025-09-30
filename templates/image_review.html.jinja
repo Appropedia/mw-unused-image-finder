@@ -1,0 +1,208 @@
+<!doctype html>
+<html>
+  <head>
+    <title> Review - {{image['title']}} </title>
+    <link rel="stylesheet" type="text/css"
+          href="{{url_for('static', filename='image_review.css')}}">
+  </head>
+  <body>
+    {% include 'top_bar.html.jinja' %}
+
+    <h1><a id='wiki_link' target="_blank">{{image['title']}}</a></h1>
+
+    <div class="global_container">
+      <div class="current_image_area">
+        <img id="current_image">
+      </div>
+      <div class="revision_info_area">
+        <div> Size: <span id="revision_size"></span></div>
+        <div> Dimensions: <span id="revision_dimensions"></span></div>
+        <div> Time: <span id="revision_time"></span></div>
+      </div>
+      <div class="similar_images_area">
+        <div> Similar images: </div>
+        <div class="thumbnail_strip" id="similar_img_strip"></div>
+      </div>
+      <div class="revision_select_area">
+        <div> Revisions: </div>
+        <div class="thumbnail_strip" id="revisions_strip"></div>
+      </div>
+      <div class="image_info_area">
+        <div> Last modification: <span id="last_modification"></span></div>
+        <div> Total revisions: {{image['total_revisions']}} </div>
+        <div> Size of all revisions: <span id="all_revs_size"></span></div>
+        <div> Largest revision: <span id="max_rev_size"></span></div>
+
+        <script type=module>
+          import { format_local_datetime, format_storage_units }
+          from '{{url_for('static', filename='format_utils.js')}}';
+
+          document.getElementById('last_modification').textContent =
+            format_local_datetime('{{image['last_modification']}}');
+
+          document.getElementById('all_revs_size').textContent =
+            format_storage_units({{image['all_revs_size']}});
+
+          document.getElementById('max_rev_size').textContent =
+            format_storage_units({{image['max_rev_size']}});
+        </script>
+      </div>
+      <div class="revision_actions_area">
+        <div>
+          <a href="{{url_for('image_review.deal')}}?dealer={{dealer}}&offset={{next_offset}}">
+            Next
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script type=module>
+      import { format_local_datetime, format_storage_units }
+      from '{{url_for('static', filename='format_utils.js')}}';
+      import { query_image_info, query_similar_images }
+      from '{{url_for('static', filename='image_review.js')}}';
+
+      const wiki_link = document.getElementById('wiki_link');
+      const current_image = document.getElementById('current_image');
+      const revision_size = document.getElementById('revision_size');
+      const revision_dimensions = document.getElementById('revision_dimensions');
+      const revision_time = document.getElementById('revision_time');
+      const similar_img_strip = document.getElementById('similar_img_strip');
+      const revisions_strip = document.getElementById('revisions_strip');
+
+      const similar_images = {{similar_images|tojson}};
+      const similar_img_strip_items = {};
+      let revisions = [];
+      let selected_image = 0;
+
+      //Updates the display status of items in the similar image strip
+      function display_similar_images(ref_timestamp, enable) {
+        //Don't update if the reference revision has no similar images (or have not been loaded yet)
+        if (ref_timestamp in similar_img_strip_items) {
+          for (const strip_item of similar_img_strip_items[ref_timestamp]) {
+            if (enable) strip_item.style.display = '';
+            else        strip_item.style.display = 'none';
+          }
+        }
+      }
+
+      //Select a new image from the revisions strip and update accordingly
+      function select_image(new_image) {
+        //Make sure revisions are loaded before proceeding
+        if (new_image in revisions) {
+          //Set the current image to the selected revision and update revision information
+          current_image.src = revisions[new_image].url;
+          revision_size.textContent = format_storage_units(revisions[new_image].size);
+          revision_dimensions.textContent = revisions[new_image].dimensions;
+          revision_time.textContent = format_local_datetime(revisions[new_image].timestamp);
+
+          //Pass the selection status (subclass) to the new selected image
+          revisions_strip.children[selected_image].classList.remove('selected');
+          revisions_strip.children[new_image].classList.add('selected');
+
+          display_similar_images(revisions[selected_image].timestamp, false);
+          display_similar_images(revisions[new_image].timestamp, true);
+        }
+
+        selected_image = new_image;
+      }
+
+      //Check whether a revision is defined in the similar images (si) object
+      function revision_in_similar_images(ref_timestamp, si_title, si_timestamp) {
+        return si_title in similar_images[ref_timestamp] &&
+               similar_images[ref_timestamp][si_title].revisions.includes(si_timestamp);
+      }
+
+      //This asynchronous process queries the wiki for information about the current image and
+      //updates the document when completed
+      (async () => {
+        const image_info = await query_image_info('{{api_url}}', '{{image['title']}}');
+
+        //Set the wiki link URL and get the revisions
+        wiki_link.href = image_info.descriptionurl;
+        revisions = image_info.revisions;
+
+        for (let index = 0; index < revisions.length; index++) {
+          //Create a new selectable item in the revisions strip
+          const img_container = revisions_strip.appendChild(document.createElement('div'));
+          img_container.classList.add('thumbnail_strip_item', 'selectable');
+
+          //Add the thumbnail to the selectable item
+          const img = img_container.appendChild(document.createElement('img'));
+          img.src = revisions[index].thumburl;
+          img.addEventListener('click', () => { select_image(index); })
+        }
+
+        select_image(selected_image);  //Refresh the selected image
+      })();
+
+      //This asynchronous process queries the wiki for information about images similar to the
+      //current one and updates the document when completed
+      (async () => {
+        //Retrieve all unique titles from the similar_images object
+        const similar_image_titles = [];
+        for (const image of Object.values(similar_images)) {
+          for (const title in image) {
+            if (!similar_image_titles.includes(title)) {
+              similar_image_titles.push(title);
+            }
+          }
+        }
+
+        //Avoid querying for information if there's no similar images
+        if (similar_image_titles.length == 0)
+          return;
+
+        //Query for information on similar images
+        const similar_image_info = await query_similar_images('{{api_url}}', similar_image_titles);
+
+        //Iterate over the similar image (si) information provided by the wiki
+        for (const si_title in similar_image_info) {
+          for (const si_timestamp in similar_image_info[si_title]) {
+            //Cross the data provided by the wiki against the data provided by the application
+            //server. If both provide matching information about an specific revision, mark it as
+            //referenced.
+            let revision_referenced = false;
+            for (const ref_timestamp in similar_images) {
+              if (revision_in_similar_images(ref_timestamp, si_title, si_timestamp))
+              {
+                revision_referenced = true;
+                break;
+              }
+            }
+
+            if (revision_referenced) {
+              //Add a new thumbnail to the similar image strip using information provided by the
+              //wiki
+              const img_container = similar_img_strip.appendChild(document.createElement('div'));
+              img_container.classList.add('thumbnail_strip_item');
+              img_container.style.display = 'none';
+
+              const anchor = img_container.appendChild(document.createElement('a'));
+              anchor.href = similar_image_info[si_title][si_timestamp].descriptionurl;
+              anchor.target = '_blank';
+
+              const img = anchor.appendChild(document.createElement('img'));
+              img.src = similar_image_info[si_title][si_timestamp].thumburl;
+
+              //Cross the data again. For each revision that is referenced by both sides, add a
+              //reference of the newly created item to the similar_img_strip_items object.
+              for (const ref_timestamp in similar_images) {
+                if (!revision_in_similar_images(ref_timestamp, si_title, si_timestamp))
+                  continue;
+
+                //Create the array for the reference timestamp only once
+                if (!(ref_timestamp in similar_img_strip_items))
+                  similar_img_strip_items[ref_timestamp] = [];
+
+                similar_img_strip_items[ref_timestamp].push(img_container);
+              }
+            }
+          }
+        }
+
+        select_image(selected_image);  //Refresh the selected image
+      })();
+    </script>
+  </body>
+</html>

@@ -1,6 +1,5 @@
-from collections.abc import Iterator
 from modules.model import db
-from modules.model import hashes
+from modules.model import hashes, unused_images
 
 _hash_fields = ', '.join(f'H{i}' for i in range(8))
 
@@ -9,50 +8,77 @@ _hash_fields = ', '.join(f'H{i}' for i in range(8))
 def init_schema():
   con = db.get()
 
-  #This view allows to query the hash for an specific image revision
+  #This view allows to query the timestamp and one of the hashes for each revision of an specific
+  #image
   con.execute(
     f'CREATE VIEW IF NOT EXISTS '
-    f'image_hashes_view(image_title, revision_timestamp, {_hash_fields}) AS '
-    f'SELECT images.title, revisions.timestamp, {_hash_fields} FROM images '
-    f'INNER JOIN revisions ON images.id = revisions.image_id '
-    f'INNER JOIN hashes ON revisions.id = hashes.revision_id')
+    f'reference_hash_view(image_id, revision_timestamp, {_hash_fields}) AS '
+    f'SELECT image_id, timestamp, {_hash_fields} FROM '
+      f'(SELECT revisions.image_id, revisions.timestamp, {_hash_fields}, '
+      f'ROW_NUMBER() OVER (PARTITION BY revisions.id) AS row_num FROM revisions '
+      f'INNER JOIN hashes ON revisions.id = hashes.revision_id)'
+    f'WHERE row_num = 1')
 
   #This view allows to query the title and timestamp for an specific revision
   con.execute(
     'CREATE VIEW IF NOT EXISTS '
-    'image_revisions_view(image_title, revision_id, revision_timestamp) AS '
-    'SELECT images.title, revisions.id, revisions.timestamp FROM images '
+    'image_revisions_view(image_id, image_title, revision_id, revision_timestamp) AS '
+    'SELECT images.id, images.title, revisions.id, revisions.timestamp FROM images '
     'INNER JOIN revisions ON images.id = revisions.image_id')
 
-#Perform a search for images that are similar to a given one, within a maximum hamming distance
+#Perform a search for revisions that are similar to the revisions of a given image, within a maximum
+#hamming distance
 #Parameters:
-# - image_title: The title of the reference image.
-# - revision_timestamp: The timestamp of the reference image.
+# - ref_image_id: The id of the reference image.
 # - max_dist: The maximum allowed hamming distance. Image hashes farther than this are excluded.
-#Return value: An iterator object that returns tuples with the titles and timestamps of matching
-#images.
-def search(image_title: int, revision_timestamp: int, max_dist: int) -> Iterator[tuple[str, int]]:
-  cursor = db.get().cursor()
+#Return value: A nested dictionary that encodes matching images with the following structure:
+#   Search results
+#   <dict>
+#     - key: {Timestamp of the revision of the reference image}
+#       <dict>
+#       - key: {Title of the matching image}
+#         <dict>
+#         - key: 'unused'
+#           <bool> - a flag indicating whether the image is unused in the wiki
+#         - key: 'revisions'
+#           <list[str]> - the timestamps of all matching revisions
+def search(ref_image_id: int, max_dist: int) -> dict[dict[dict[bool, list[str]]]]:
+  con = db.get()
 
-  #Get a hash of the reference image (any one will do)
-  ref_hash = cursor.execute(
-    f'SELECT {_hash_fields} FROM image_hashes_view '
-    f'WHERE image_title = ? AND revision_timestamp = ? LIMIT 1',
-    (image_title, revision_timestamp)).fetchone()
+  #Obtain the timestamp and a reference hash for each of the revisions of the given image (every
+  #revision can have up to 4 hashes - one per rotation, but any one will do)
+  ref_hash_cursor = con.execute(
+    f'SELECT revision_timestamp, {_hash_fields} FROM reference_hash_view WHERE image_id = ?',
+    (ref_image_id,))
+  ref_hash_cursor.row_factory = lambda cur, row: (row[0], row[1:9])
 
-  if ref_hash is None: return     #Image is not hashed yet
-  if ref_hash[0] is None: return  #Image couldn't be hashed (e.g. unsupported file type)
+  result = {}
+  for ref_revision_timestamp, ref_hash in ref_hash_cursor:
+    #Make sure the image is hashed (e.g. not an unsupported file type)
+    if ref_hash[0] is None:
+      continue
 
-  #Perform a search for the reference hash and iterate over the results
-  for revision_id in hashes.search(ref_hash, max_dist):
-    #Obtain the next image title, then yield it
-    row = cursor.execute(
-      'SELECT image_title, revision_timestamp FROM image_revisions_view '
-      'WHERE revision_id = ? LIMIT 1',
-      (revision_id,)).fetchone()
+    #Perform a search for the reference hash and iterate over the results
+    result[ref_revision_timestamp] = {}
+    for match_revision_id in hashes.search(ref_hash, max_dist):
+      #Look up the image that corresponds to the revision that was just found
+      match_image_id, match_image_title, match_rev_timestamp = con.execute(
+        'SELECT image_id, image_title, revision_timestamp FROM image_revisions_view '
+        'WHERE revision_id = ? LIMIT 1',
+        (match_revision_id,)).fetchone()
 
-    if row[0] == image_title:
-      continue  #The reference image is similar to itself, so avoid returning it
+      #Make sure this is different from the reference image, which is identical to itself
+      if match_image_id == ref_image_id:
+        continue
 
-    print(revision_timestamp, row[1])
-    yield row
+      #Add a dictionary for the matching image if not already present
+      if match_image_title not in result[ref_revision_timestamp]:
+        result[ref_revision_timestamp][match_image_title] = {
+          'unused': unused_images.exists(match_image_title),
+          'revisions': [],
+        }
+
+      #Lastly, append the matching revision timestamp
+      result[ref_revision_timestamp][match_image_title]['revisions'].append(match_rev_timestamp)
+
+  return result

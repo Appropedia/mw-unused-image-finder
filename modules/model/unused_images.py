@@ -8,6 +8,11 @@ def init_schema():
     'CREATE TABLE IF NOT EXISTS unused_images('
       'title TEXT UNIQUE NOT NULL)')
 
+#Check whether an image is in the unused images table
+def exists(title: str) -> bool:
+  return db.get().execute(
+    'SELECT 1 FROM unused_images WHERE title = ?', (title,)).fetchone() is not None
+
 #Create an scratch table for registering new unused images
 def synchronize_begin():
   db.get().execute(

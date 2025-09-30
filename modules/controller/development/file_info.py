@@ -1,7 +1,7 @@
 from flask import Blueprint, abort, render_template
 from modules.common import config
 from modules.model import images, revisions
-from modules.model.view import similar_images
+from modules.model.view.development import similar_images
 
 blueprint = Blueprint('file_info', __name__)
 

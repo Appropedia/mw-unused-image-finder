@@ -4,11 +4,7 @@
     <title> Main menu </title>
   </head>
   <body>
-    <div style="text-align: right;">
-      <a href="{{url_for('session_control.logout')}}">Log out</a>
-    </div>
-
-    <hr>
+    {% include 'top_bar.html.jinja' %}
 
     <p>Welcome to the MediaWiki cleanup assistant!</p>
 
@@ -16,11 +12,13 @@
     one you select:</p>
 
     <ul>
-      <li>Unused files</li>
+      <li><a href="{{url_for('image_review.deal')}}?dealer=unused_images">Unused files</li>
+{#
       <li>Files with large older revisions</li>
       <li>Files with most older revisions</li>
       <li>Largest files</li>
       <li>Files with duplicate revisions</li>
+#}
     </ul>
 {#
     Progress:
@@ -36,7 +34,7 @@
     - Registered users (admin only)
 #}
   {% for message in get_flashed_messages() %}
-    <div style="color: red">{{message}}</div>
+    <div style="color: red;">{{message}}</div>
   {% endfor %}
   </body>
 </html>

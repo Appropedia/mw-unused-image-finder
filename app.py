@@ -4,7 +4,7 @@ from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 from modules.common import config, app_config
 from modules.mediawiki import cors_proxy
-from modules.controller import default, session_control, admin_setup
+from modules.controller import default, session_control, admin_setup, image_review
 from modules.controller.development import file_search, file_info
 from modules.model import db
 
@@ -18,6 +18,7 @@ app.register_blueprint(cors_proxy.blueprint)
 app.register_blueprint(default.blueprint)
 app.register_blueprint(session_control.blueprint)
 app.register_blueprint(admin_setup.blueprint)
+app.register_blueprint(image_review.blueprint)
 app.register_blueprint(file_search.blueprint, url_prefix = '/development')
 app.register_blueprint(file_info.blueprint, url_prefix = '/development')
 

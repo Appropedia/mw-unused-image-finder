@@ -45,8 +45,7 @@ def search(ref_hash: tuple, max_dist: int, cand_hash: tuple = (), cand_dist: int
 
   #Search for all distinct hahses in the current hash level, using the candidate hash as the fixed
   #portion for all previous levels
-  hash_byte_cursor = con.cursor()
-  hash_byte_cursor.execute(
+  hash_byte_cursor = con.execute(
     f'SELECT DISTINCT H{hash_level} FROM hashes WHERE H{hash_level} IS NOT NULL'
     f'{''.join(f' AND H{i}=?' for i in range(hash_level))}',
     cand_hash)
@@ -75,8 +74,7 @@ def search(ref_hash: tuple, max_dist: int, cand_hash: tuple = (), cand_dist: int
     else:
       #Maximum hash level reached (hash is complete). Search for all hashes matching the candidate
       #hash and add the corresponding revision ids to the matches.
-      rev_id_cursor = con.cursor()
-      rev_id_cursor.execute(
+      rev_id_cursor = con.execute(
         f'SELECT revision_id FROM hashes WHERE {' AND '.join(f'H{i}=?' for i in range(8))}',
         new_cand_hash)
       rev_id_cursor.row_factory = lambda cur, row: row[0]

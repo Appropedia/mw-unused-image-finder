@@ -21,3 +21,9 @@ export function format_storage_units(value) {
 
   return value.toPrecision(4) + ' ' + units[i];
 }
+
+//Format an ISO timestamp as a local datetime
+export function format_local_datetime(iso_datetime) {
+  const date = new Date(iso_datetime);
+  return date.toLocaleString();
+}
