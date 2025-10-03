@@ -1,30 +1,21 @@
-from modules.model import db
-from modules.model import hashes, unused_images
+from modules.model import db, hashes, unused_images
+from modules.model.view import image_revisions
 
 _hash_fields = ', '.join(f'H{i}' for i in range(8))
 
 #Schema initialization function
 @db.schema
 def init_schema():
-  con = db.get()
-
   #This view allows to query the timestamp and one of the hashes for each revision of an specific
   #image
-  con.execute(
+  db.get().execute(
     f'CREATE VIEW IF NOT EXISTS '
-    f'reference_hash_view(image_id, revision_timestamp, {_hash_fields}) AS '
+    f'reference_hashes_view(image_id, revision_timestamp, {_hash_fields}) AS '
     f'SELECT image_id, timestamp, {_hash_fields} FROM '
       f'(SELECT revisions.image_id, revisions.timestamp, {_hash_fields}, '
       f'ROW_NUMBER() OVER (PARTITION BY revisions.id) AS row_num FROM revisions '
       f'INNER JOIN hashes ON revisions.id = hashes.revision_id)'
     f'WHERE row_num = 1')
-
-  #This view allows to query the title and timestamp for an specific revision
-  con.execute(
-    'CREATE VIEW IF NOT EXISTS '
-    'image_revisions_view(image_id, image_title, revision_id, revision_timestamp) AS '
-    'SELECT images.id, images.title, revisions.id, revisions.timestamp FROM images '
-    'INNER JOIN revisions ON images.id = revisions.image_id')
 
 #Perform a search for revisions that are similar to the revisions of a given image, within a maximum
 #hamming distance
@@ -48,7 +39,7 @@ def search(ref_image_id: int, max_dist: int) -> dict[dict[dict[bool, list[str]]]
   #Obtain the timestamp and a reference hash for each of the revisions of the given image (every
   #revision can have up to 4 hashes - one per rotation, but any one will do)
   ref_hash_cursor = con.execute(
-    f'SELECT revision_timestamp, {_hash_fields} FROM reference_hash_view WHERE image_id = ?',
+    f'SELECT revision_timestamp, {_hash_fields} FROM reference_hashes_view WHERE image_id = ?',
     (ref_image_id,))
   ref_hash_cursor.row_factory = lambda cur, row: (row[0], row[1:9])
 
@@ -61,11 +52,9 @@ def search(ref_image_id: int, max_dist: int) -> dict[dict[dict[bool, list[str]]]
     #Perform a search for the reference hash and iterate over the results
     result[ref_revision_timestamp] = {}
     for match_revision_id in hashes.search(ref_hash, max_dist):
-      #Look up the image that corresponds to the revision that was just found
-      match_image_id, match_image_title, match_rev_timestamp = con.execute(
-        'SELECT image_id, image_title, revision_timestamp FROM image_revisions_view '
-        'WHERE revision_id = ? LIMIT 1',
-        (match_revision_id,)).fetchone()
+      #Look up the image and timestamp that correspond to the revision that was just found
+      match_image_id, match_image_title, match_rev_timestamp =\
+        image_revisions.get_revision_info(match_revision_id)
 
       #Make sure this is different from the reference image, which is identical to itself
       if match_image_id == ref_image_id:

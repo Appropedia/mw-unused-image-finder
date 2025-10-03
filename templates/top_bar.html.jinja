@@ -1,4 +1,7 @@
 <div style="text-align: right;">
+{% if session['user_name'] %}
+  {{session['user_name']}}
+{% endif %}
   <a href="{{url_for('session_control.logout')}}">Log out</a>
 </div>
 <hr>

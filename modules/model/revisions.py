@@ -72,9 +72,6 @@ def synchronize_add_one(image_id: int, timestamp: str, url: str) -> bool:
       'ON CONFLICT (image_id, timestamp) DO NOTHING RETURNING 1',
       (image_id, timestamp, url)).fetchone()
 
-  #Check whether the revision was inserted (did not fail the unique constraint check)
-  is_new = True if row is not None else False
-
   #Note: Table insertion order is important, as inserting into revisions first will cause other
   #restrictions such as foreign keys to be checked, causing an exception that skips the code below
 
@@ -83,7 +80,8 @@ def synchronize_add_one(image_id: int, timestamp: str, url: str) -> bool:
     con.execute(
       'INSERT INTO updated_revisions (image_id, timestamp) VALUES (?, ?)', (image_id, timestamp))
 
-  return is_new
+  #Return true if revision was inserted (did not fail the unique constraint check)
+  return row is not None
 
 #Create an iterator object that returns the image id and timestamp of all revisions that would be
 #deleted by ending a full synchronization process

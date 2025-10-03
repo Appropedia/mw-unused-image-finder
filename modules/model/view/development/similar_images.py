@@ -1,6 +1,5 @@
 from collections.abc import Iterator
-from modules.model import db
-from modules.model import hashes
+from modules.model import db, hashes
 
 _hash_fields = ', '.join(f'H{i}' for i in range(8))
 

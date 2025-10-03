@@ -12,15 +12,23 @@ def init_schema():
       'status TEXT NOT NULL, '
       'CHECK (status IN ("new_pass", "active", "banned")))')
 
-#Create a new user
-def create(name: str, password: str, status: str):
+#Create a new user and return the new id
+def create(name: str, password: str, status: str) -> int | None:
   with db.get() as con:
-    con.execute(
-      'INSERT INTO users(name, password, status) VALUES (?, ?, ?)',
-      (name, generate_password_hash(password), status))
+    row = con.execute(
+      'INSERT INTO users(name, password, status) VALUES (?, ?, ?) ON CONFLICT (name) DO NOTHING '
+      'RETURNING id',
+      (name, generate_password_hash(password), status)).fetchone()
+
+  return None if row is None else row[0]
+
+#Check for user name availability
+def name_available(name: str) -> bool:
+  return db.get().execute(
+    'SELECT EXISTS(SELECT 1 FROM users WHERE name = ?)', (name,)).fetchone()[0] == 0
 
 #Verify a user password and get their status
-def authenticate(name: str, password: str) -> tuple[bool, str]:
+def authenticate(name: str, password: str) -> tuple[bool, str | None]:
   row = db.get().execute('SELECT password, status FROM users WHERE name = ?', (name,)).fetchone()
   if row is None:
     return (False, None)
@@ -28,7 +36,17 @@ def authenticate(name: str, password: str) -> tuple[bool, str]:
     password_hash, status = row
     return (check_password_hash(password_hash, password), status)
 
-#Return the users total (TEMPORARY METHOD - used for checking admin account existence)
-#[development_only]
-def total() -> int:
-  return db.get().execute('SELECT COUNT(*) FROM users').fetchone()[0]
+#Get the status of a given user
+def read_status(name: str) -> str:
+  row = db.get().execute('SELECT status FROM users WHERE name = ?', (name,)).fetchone()
+
+  return None if row is None else row[0]
+
+#Update user password and status, returning True if successful (e.g. the user exists)
+def update_password_and_status(name: str, password: str, status: str) -> bool:
+  with db.get() as con:
+    row = con.execute(
+      'UPDATE users SET password = ?, status = ? WHERE name = ? RETURNING 1',
+      (generate_password_hash(password), status, name)).fetchone()
+
+  return row is not None

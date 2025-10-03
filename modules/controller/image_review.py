@@ -1,6 +1,6 @@
 from flask import Blueprint, request, abort, url_for, redirect, render_template
 from modules.controller import session_control
-from modules.model.view import image_usage, similar_images
+from modules.model.view import image_usage, image_revisions, similar_images
 from modules.common import config
 
 blueprint = Blueprint('image_review', __name__)
@@ -18,7 +18,7 @@ def deal():
   #Choose the next image to deal based on the selected dealer
   match dealer:
     case 'unused_images':
-      image_title = image_usage.largest_unused(offset)
+      image_title = image_usage.get_largest_unused(offset)
     case _:
       return abort(400)
 
@@ -32,7 +32,7 @@ def deal():
 #Route handler for the image review view
 @blueprint.route('/image_review/<image_title>')
 @session_control.login_required
-def view(image_title):
+def view(image_title: str):
   dealer = request.args.get('dealer', None)
   try:
     offset = int(request.args.get('offset', 0))
@@ -51,7 +51,7 @@ def view(image_title):
   render_params['image']['max_rev_size'],\
   render_params['image']['all_revs_size'],\
   render_params['image']['total_revisions']\
-    = image_usage.read(image_title)
+    = image_revisions.get_image_summary(image_title)
 
   render_params['image']['title'] = image_title
 

@@ -1,6 +1,5 @@
 from collections.abc import Callable
 from flask import Blueprint, redirect, url_for, session, request, render_template, abort, flash
-from modules.controller import admin_setup
 from modules.model import users
 
 blueprint = Blueprint('session_control', __name__)
@@ -8,9 +7,6 @@ blueprint = Blueprint('session_control', __name__)
 #Route handler for the login view
 @blueprint.route('/login', methods = ['GET', 'POST'])
 def login():
-  if not admin_setup.complete():
-    return redirect(url_for('admin_setup.view'))
-
   if 'user_name' in session:
     return redirect(url_for('default.view'))
 
@@ -24,10 +20,15 @@ def login():
         abort(400)
 
       #Authenticate the user now
-      password_valid, status = users.authenticate(name = request.form['user_name'],
-                                                  password = request.form['user_password'])
+      password_valid, user_status = users.authenticate(name = request.form['user_name'],
+                                                       password = request.form['user_password'])
+
       if not password_valid:
         flash('Invalid user credentials.')
+        return render_template('login.html.jinja')
+
+      if user_status == 'banned':
+        flash('Your account has been banned. Please contact your site administrator for details.')
         return render_template('login.html.jinja')
 
       #Set the session status to active and redirect to the default view
@@ -49,6 +50,22 @@ def login_required(func: Callable):
 
 #Check for an active user session when a route handler is about to be called, redirecting to the
 #login view when needed
-def check(route_handler: Callable):
-  if route_handler in _route_handlers and 'user_name' not in session:
+def check(request_endpoint, route_handler: Callable):
+  if route_handler not in _route_handlers:
+    #The route handler doesnt require login, proceed with the request
+    return
+
+  if 'user_name' not in session:
+    #Login required and user not logged in, redirect to login view
     return redirect(url_for('session_control.login'))
+
+  #User logged in, check status
+  user_status = users.read_status(session['user_name'])
+
+  if user_status is None or user_status == 'banned':
+    #Invalid or banned account, drop the session immediately
+    logout()
+
+  if user_status == 'new_pass' and request_endpoint != 'password_update.view':
+    #The account has a new generated password, prompt for password update
+    return redirect(url_for('password_update.view'))
