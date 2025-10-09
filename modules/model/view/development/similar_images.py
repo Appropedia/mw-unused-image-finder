@@ -8,7 +8,7 @@ _hash_fields = ', '.join(f'H{i}' for i in range(8))
 def init_schema():
   con = db.get()
 
-  #This view allows to query the hash for an specific image revision
+  #This view allows to query the hash for a specific image revision
   con.execute(
     f'CREATE VIEW IF NOT EXISTS '
     f'image_hashes_view(image_title, revision_timestamp, {_hash_fields}) AS '
@@ -16,7 +16,7 @@ def init_schema():
     f'INNER JOIN revisions ON images.id = revisions.image_id '
     f'INNER JOIN hashes ON revisions.id = hashes.revision_id')
 
-  #This view allows to query the title and timestamp for an specific revision
+  #This view allows to query the title and timestamp for a specific revision
   con.execute(
     'CREATE VIEW IF NOT EXISTS '
     'image_revisions_view(image_title, revision_id, revision_timestamp) AS '

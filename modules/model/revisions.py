@@ -3,7 +3,7 @@ from modules.model import db
 
 #Schema initialization function
 @db.schema
-def init_schema():
+def init_schema() -> None:
   con = db.get()
 
   con.execute(
@@ -24,21 +24,10 @@ def read_last_timestamp() -> str | None:
     'SELECT timestamp FROM revisions ORDER BY timestamp DESC LIMIT 1').fetchone()
   return None if row is None else row[0]
 
-#Create an iterator object that returns the timestamps associated to the revisions of a given image
-#[development_only]
-def read_timestamps(image_id: int) -> Iterator[str]:
-  cursor = db.get().cursor()
-  cursor.execute('SELECT timestamp FROM revisions WHERE image_id = ?', (image_id,))
-
-  while True:
-    row = cursor.fetchone()
-    if row is None: break
-    yield row[0]
-
 #Create an iterator object that returns the timestamps and sizes associated to the revisions of a
 #given image
 #[development_only]
-def read_timestamps_and_sizes(image_id: int) -> Iterator[tuple[str, int]]:
+def get_timestamps_and_sizes(image_id: int) -> Iterator[tuple[str, int]]:
   cursor = db.get().cursor()
   cursor.execute('SELECT timestamp, size FROM revisions WHERE image_id = ?', (image_id,))
 
@@ -48,13 +37,13 @@ def read_timestamps_and_sizes(image_id: int) -> Iterator[tuple[str, int]]:
     yield row
 
 #Update the size of an image revision
-def update_size(id_: int, size: int):
+def update_size(id_: int, size: int) -> None:
   with db.get() as con:
     con.execute('UPDATE revisions SET size = ? WHERE id = ?', (size, id_))
 
 #Start a full or partial synchronization process for the revisions table by creating a temporary
 #tracking table
-def synchronize_begin():
+def synchronize_begin() -> None:
   db.get().execute(
     'CREATE TEMPORARY TABLE updated_revisions('
     'image_id INTEGER, '
@@ -114,7 +103,7 @@ def partial_synchronize_get_deletions() -> Iterator[tuple[int, str]]:
 
 #End a full synchronization process for the revisions table by deleting all revisions that are not
 #in the tracking table
-def full_synchronize_end():
+def full_synchronize_end() -> None:
   con = db.get()
 
   with con:
@@ -126,7 +115,7 @@ def full_synchronize_end():
 
 #End a partial synchronization process for the revisions table by deleting all revisions of the
 #images that have an image id in the tracking table but are missing a timestamp
-def partial_synchronize_end():
+def partial_synchronize_end() -> None:
   con = db.get()
 
   with con:

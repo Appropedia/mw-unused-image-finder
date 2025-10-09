@@ -12,25 +12,25 @@
        |                    |      +------------------------+
        |0..1                |                  |1
 +-----------------------+   |                  |
-|     dealt_images      |   |                  |0..1
+|   image_concessions   |   |                  |0..1
 +-----------------------+   |   +------------------------------+
-| image_id   integer FK |   |   |           reviews            |        +--------------------------+
-| user_id    integer FK |   |   +------------------------------+        |          users           |
-| timestamp  text       |   +---| id                integer PK |        +--------------------------+
+| user_id    integer FK |   |   |           reviews            |        +--------------------------+
+| image_id   integer FK |   |   +------------------------------+        |          users           |
+| timestamp  integer    |   +---| id                integer PK |        +--------------------------+
 |                       |   0..*| image_id          integer FK |--------| id            integer PK |
 | { unique(image_id) }  |       | revision_id       integer FK |0..*   1| name          text       |
-+-----------------------+       | cleaup_action_id  integer FK |        | password      text       |
-                                | reviewer_id       integer FK |        | status        text       |
-+----------------------+        | auditor_id        integer FK |        |                          |
-|   cleanup_actions    |        | creation_time     text       |        | { unique(name) }         |
-+----------------------+        | approval_time     text       |        | { status in ("new_pass", |
-| id        integer PK |--------| comment           text       |        |   "active", "banned") }  |
-| name      text       |1   0..*|                              |        +--------------------------+
-| obsolete  boolean    |        | { unique(image_id,           |                     |1
-|                      |        |          revision_id) }      |                     |
-| { unique(name) }     |        +------------------------------+                     |0..*
-+----------------------+                       |1                        +------------------------+
-                                               |                         |       privileges       |
+| { unique(user_id) }   |       | cleaup_action_id  integer FK |        | password      text       |
++-----------------------+       | reviewer_id       integer FK |        | status        text       |
+                                | auditor_id        integer FK |        |                          |
++----------------------+        | creation_time     text       |        | { unique(name) }         |
+|   cleanup_actions    |        | approval_time     text       |        | { status in ("new_pass", |
++----------------------+        | comment           text       |        |   "active", "banned") }  |
+| id        integer PK |--------|                              |        +--------------------------+
+| name      text       |1   0..*| { unique(image_id,           |                     |1
+| obsolete  boolean    |        |          revision_id) }      |                     |
+|                      |        +------------------------------+                     |0..*
+| { unique(name) }     |                       |1                        +------------------------+
++----------------------+                       |                         |       privileges       |
                                                |0..*                     +------------------------+
 +----------------------+        +-------------------------------+        | user_id     integer FK |
 |   cleanup_reasons    |        |    review_cleanup_reasons     |        | name        text       |

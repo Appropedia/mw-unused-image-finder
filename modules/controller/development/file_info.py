@@ -14,7 +14,7 @@ def view(image_title: str):
 
   #Get the revisions of the requested image
   image_revisions = [{'timestamp': timestamp, 'size': size}\
-                     for (timestamp, size) in revisions.read_timestamps_and_sizes(image_id)]
+                     for (timestamp, size) in revisions.get_timestamps_and_sizes(image_id)]
 
   #Perform searches for similar images and append them to each revision
   for rev in image_revisions:

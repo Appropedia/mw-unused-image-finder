@@ -6,6 +6,7 @@ import urllib3
 from modules.common import config
 from modules.model import db, images, revisions, hashes, unused_images
 from modules.model.view import pending_hashes
+from modules.model.relation import images_without_revisions
 from modules.mediawiki import api_client
 from modules.utility import perceptual_hash
 
@@ -62,7 +63,7 @@ def refresh_full_image_index(first_time: bool):
 
   #Finish the full synchronization process and then prune images without revisions
   revisions.full_synchronize_end()
-  images.delete_revision_lacking()
+  images_without_revisions.prune()
 
   print('Done')
 

@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from flask import Blueprint, redirect, url_for, session, request, render_template, abort, flash
+from flask import Blueprint, session, redirect, url_for, request, render_template, abort, flash, g
 from modules.model import users
 
 blueprint = Blueprint('session_control', __name__)
@@ -59,13 +59,13 @@ def check(request_endpoint, route_handler: Callable):
     #Login required and user not logged in, redirect to login view
     return redirect(url_for('session_control.login'))
 
-  #User logged in, check status
-  user_status = users.read_status(session['user_name'])
+  #User is logged in, store user information in the global context
+  g.user_id, g.user_status = users.read(session['user_name'])
 
-  if user_status is None or user_status == 'banned':
+  if g.user_status is None or g.user_status == 'banned':
     #Invalid or banned account, drop the session immediately
     logout()
 
-  if user_status == 'new_pass' and request_endpoint != 'password_update.view':
+  if g.user_status == 'new_pass' and request_endpoint != 'password_update.view':
     #The account has a new generated password, prompt for password update
     return redirect(url_for('password_update.view'))

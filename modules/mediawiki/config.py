@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 config.register({
   'mediawiki_server': {
     'api': str,
-  }
+  },
 })
 
 #Perform initialization based on configuration

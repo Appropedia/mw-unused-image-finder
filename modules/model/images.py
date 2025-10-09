@@ -2,7 +2,7 @@ from modules.model import db
 
 #Schema initialization function
 @db.schema
-def init_schema():
+def init_schema() -> None:
   db.get().execute(
     'CREATE TABLE IF NOT EXISTS images('
       'id INTEGER PRIMARY KEY, '
@@ -32,11 +32,6 @@ def read_title(id_: int) -> str | None:
   return None if row is None else row[0]
 
 #Delete an image given its title
-def delete(title: str):
+def delete(title: str) -> None:
   with db.get() as con:
     con.execute('DELETE FROM images WHERE title = ?', (title,))
-
-#Delete any image that has no revisions (used for pruning after fully synchronizing revisions)
-def delete_revision_lacking():
-  with db.get() as con:
-    con.execute('DELETE FROM images WHERE id NOT IN (SELECT image_id FROM revisions)')

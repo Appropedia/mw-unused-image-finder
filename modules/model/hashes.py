@@ -2,7 +2,7 @@ from modules.model import db
 
 #Schema initialization function
 @db.schema
-def init_schema():
+def init_schema() -> None:
   con = db.get()
 
   con.execute(
@@ -19,7 +19,7 @@ def init_schema():
     'CREATE INDEX IF NOT EXISTS hashes_revision_id ON hashes(revision_id)')
 
 #Create a new hash for a given image revision
-def create(revision_id: int, hash_: tuple):
+def create(revision_id: int, hash_: tuple) -> None:
   with db.get() as con:
     con.execute(
       f'INSERT INTO hashes (revision_id, {', '.join(f'H{i}' for i in range(8))}) '

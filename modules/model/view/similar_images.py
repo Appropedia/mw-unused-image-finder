@@ -5,8 +5,8 @@ _hash_fields = ', '.join(f'H{i}' for i in range(8))
 
 #Schema initialization function
 @db.schema
-def init_schema():
-  #This view allows to query the timestamp and one of the hashes for each revision of an specific
+def init_schema() -> None:
+  #This view allows to query the timestamp and one of the hashes for each revision of a specific
   #image
   db.get().execute(
     f'CREATE VIEW IF NOT EXISTS '

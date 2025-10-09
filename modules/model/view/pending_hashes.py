@@ -3,7 +3,7 @@ from modules.model import db
 
 #Schema initialization function
 @db.schema
-def init_schema():
+def init_schema() -> None:
   #This view allows to query URLs for images without a hash, allowing to download them
   db.get().execute(
     'CREATE VIEW IF NOT EXISTS pending_hashes_view(revision_id, revision_url) AS '

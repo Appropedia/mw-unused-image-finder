@@ -3,7 +3,7 @@ from modules.model import db
 
 #Schema initialization function
 @db.schema
-def init_schema():
+def init_schema() -> None:
   db.get().execute(
     'CREATE TABLE IF NOT EXISTS unused_images('
       'title TEXT UNIQUE NOT NULL)')
@@ -14,20 +14,20 @@ def exists(title: str) -> bool:
 
   return row is not None
 
-#Create an scratch table for registering new unused images
-def synchronize_begin():
+#Create a scratch table for registering new unused images
+def synchronize_begin() -> None:
   db.get().execute(
     'CREATE TEMPORARY TABLE new_unused_images('
       'title TEXT UNIQUE NOT NULL)')
 
 #Insert a group of image titles into the scratch table
-def synchronize_add_many(titles: Iterable[str]):
+def synchronize_add_many(titles: Iterable[str]) -> None:
   with db.get() as con:
     con.executemany('INSERT INTO new_unused_images (title) VALUES (?)',
                     ((t,) for t in titles))
 
 #Update the unused_images table using the scratch table
-def synchronize_end():
+def synchronize_end() -> None:
   with db.get() as con:
     con.execute('DELETE FROM unused_images')
     con.execute('INSERT INTO unused_images (title) SELECT title FROM new_unused_images')

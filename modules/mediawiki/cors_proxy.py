@@ -20,7 +20,7 @@ from modules.mediawiki import config as mw_config
 config.register({
   'mediawiki_server': {
     'cors_proxy': False,
-  }
+  },
 })
 
 #Flask blueprint instance

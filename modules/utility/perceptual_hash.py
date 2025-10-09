@@ -9,7 +9,7 @@ config.register({
   'perceptual_hashing': {
     'resolution_limit': 10000000,   #Default: 10 Mega pixel
     'image_magick_max_mem': '',     #Default: No memory limit (example: '256MiB')
-  }
+  },
 })
 
 #Error codes for module functions

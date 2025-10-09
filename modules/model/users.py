@@ -3,7 +3,7 @@ from modules.model import db
 
 #Schema initialization function
 @db.schema
-def init_schema():
+def init_schema() -> None:
   db.get().execute(
     'CREATE TABLE IF NOT EXISTS users('
       'id INTEGER PRIMARY KEY, '
@@ -16,11 +16,17 @@ def init_schema():
 def create(name: str, password: str, status: str) -> int | None:
   with db.get() as con:
     row = con.execute(
-      'INSERT INTO users(name, password, status) VALUES (?, ?, ?) ON CONFLICT (name) DO NOTHING '
+      'INSERT INTO users (name, password, status) VALUES (?, ?, ?) ON CONFLICT (name) DO NOTHING '
       'RETURNING id',
       (name, generate_password_hash(password), status)).fetchone()
 
   return None if row is None else row[0]
+
+#Read the id and status of a given user
+def read(name: str) -> tuple[int, str] | tuple[None, None]:
+  row = db.get().execute('SELECT id, status FROM users WHERE name = ?', (name,)).fetchone()
+
+  return (None,) * 2 if row is None else row
 
 #Check for user name availability
 def name_available(name: str) -> bool:
@@ -35,12 +41,6 @@ def authenticate(name: str, password: str) -> tuple[bool, str | None]:
   else:
     password_hash, status = row
     return (check_password_hash(password_hash, password), status)
-
-#Get the status of a given user
-def read_status(name: str) -> str:
-  row = db.get().execute('SELECT status FROM users WHERE name = ?', (name,)).fetchone()
-
-  return None if row is None else row[0]
 
 #Update user password and status, returning True if successful (e.g. the user exists)
 def update_password_and_status(name: str, password: str, status: str) -> bool:

@@ -2,7 +2,7 @@ from modules.model import db
 
 #Schema initialization function
 @db.schema
-def init_schema():
+def init_schema() -> None:
   #This view allows to query information for all revisions of all unused images
   db.get().execute(
     'CREATE VIEW IF NOT EXISTS '
