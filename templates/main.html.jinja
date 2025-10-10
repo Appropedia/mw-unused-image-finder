@@ -12,13 +12,31 @@
     one you select:</p>
 
     <ul>
-      <li><a href="{{url_for('image_review.deal')}}?dealer=unused_images">Unused files </a></li>
+      <li> Unused content:
+        <ul>
+          <li><a href="{{url_for('image_review.deal', category = 'unused_img_all_rev')}}">
+            Unused files
+          </a></li>
+          <li><a href="{{url_for('image_review.deal', category = 'used_img_old_rev')}}">
+            Files with older revisions
+          </a></li>
+        </ul>
+      </li>
+      <li> Content in use:
+        <ul>
+          <li><a href="{{url_for('image_review.deal', category = 'used_img_all_rev')}}">
+            Files by size
+          </a></li>
+          <li><a href="{{url_for('image_review.deal', category = 'used_img_all_rev_count')}}">
+            Files by amount of revisions
+          </a></li>
 {#
-      <li>Files with large older revisions</li>
-      <li>Files with most older revisions</li>
-      <li>Largest files</li>
-      <li>Files with duplicate revisions</li>
+          <li>
+            Files with duplicate revisions
+          </li>
 #}
+        </ul>
+      </li>
     </ul>
 {#
     Progress:

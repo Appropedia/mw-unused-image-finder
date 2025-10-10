@@ -8,6 +8,7 @@ from modules.model import hashes
 from modules.model import unused_images
 from modules.model import users
 from modules.model import privileges
+from modules.model import image_concessions
 from modules.model.view import pending_hashes
 from modules.model.view import image_usage
 from modules.model.view import similar_images
