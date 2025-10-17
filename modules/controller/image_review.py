@@ -40,14 +40,18 @@ def deal():
   return redirect(url_for('image_review.view', image_title = image_title, category = category))
 
 #Route handler for the image review view
-@blueprint.route('/image_review/<image_title>')
+@blueprint.route('/image_review/<image_title>', methods = ['GET', 'PUT'])
 @session_control.login_required
 def view(image_title: str):
+  if request.method == 'PUT':
+    #Reviews are only simulated to be saved for now
+    return 'Review saved!'
+
   #Read and validate request arguments
   category = request.args.get('category', None)
 
-  if category not in ('unused_img_all_rev', 'used_img_old_rev', 'used_img_all_rev',
-                      'used_img_all_rev_count'):
+  if category != None and category not in ('unused_img_all_rev', 'used_img_old_rev',
+                                           'used_img_all_rev', 'used_img_all_rev_count'):
     return abort(400)
 
   #Start populating the template render parameters
@@ -66,7 +70,7 @@ def view(image_title: str):
     = image_revisions.get_image_summary(image_title)
 
   #Get all similar images and add the results to the render parameters
-  render_params['similar_images'] = similar_images.search(image_id, 16)
+  render_params['similar_images'] = similar_images.search(image_id, 12)
 
   #Write the concession so other users get other images during the concession period
   image_concessions.write(g.user_id, image_id)

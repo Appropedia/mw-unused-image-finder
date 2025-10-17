@@ -1,62 +1,124 @@
 <!doctype html>
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title> Review - {{image['title']}} </title>
     <link rel="stylesheet" type="text/css"
           href="{{url_for('static', filename='image_review.css')}}">
   </head>
   <body>
-    {% include 'top_bar.html.jinja' %}
-
-    <h1><a id='wiki_link' target="_blank">{{image['title']}}</a></h1>
-
     <div class="global_container">
-      <div class="current_image_area">
-        <img id="current_image">
+      <div>
+      {% filter indent(width = 8, first = True) %}
+        {% include 'top_bar.html.jinja' %}
+      {% endfilter %}
       </div>
-      <div class="revision_info_area">
-        <div> Size: <span id="revision_size"></span></div>
-        <div> Dimensions: <span id="revision_dimensions"></span></div>
-        <div> Time: <span id="revision_time"></span></div>
-      </div>
-      <div class="similar_images_area">
-        <div> Similar images: </div>
-        <div class="thumbnail_strip" id="similar_img_strip"></div>
-      </div>
-      <div class="revision_select_area">
-        <div> Revisions: </div>
-        <div class="thumbnail_strip" id="revisions_strip"></div>
-      </div>
-      <div class="image_info_area">
-        <div> Last modification: <span id="last_modification"></span></div>
-        <div> Total revisions: {{image['total_revisions']}} </div>
-        <div> Size of all revisions: <span id="all_revs_size"></span></div>
-        <div> Largest revision: <span id="max_rev_size"></span></div>
 
-        <script type=module>
-          import { format_local_datetime, format_storage_units }
-          from '{{url_for('static', filename='format_utils.js')}}';
+      <h1><a id='wiki_link' target="_blank">{{image['title']}}</a></h1>
 
-          document.getElementById('last_modification').textContent =
-            format_local_datetime('{{image['last_modification']}}');
+      <div class="panel_container">
+        <div class="panel">
+          <div class="current_img" style="flex-grow: 1">
+            <img id="current_image">
+          </div>
+          <div>
+            <div> Similar images: </div>
+            <div class="similar_image_strip" id="similar_img_strip">
+            </div>
+          </div>
+          <div>
+            <div> Size: <span id="revision_size"></span></div>
+            <div> Dimensions: <span id="revision_dimensions"></span></div>
+            <div> Time: <span id="revision_time"></span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div>
+            <div> Last modification: <span id="last_modification"></span></div>
+            <div> Total revisions: {{image['total_revisions']}} </div>
+            <div> Size of all revisions: <span id="all_revs_size"></span></div>
+            <div> Largest revision: <span id="max_rev_size"></span></div>
 
-          document.getElementById('all_revs_size').textContent =
-            format_storage_units({{image['all_revs_size']}});
+            <script type="module">
+              import { format_local_datetime, format_storage_units }
+              from '{{url_for('static', filename='format_utils.js')}}';
 
-          document.getElementById('max_rev_size').textContent =
-            format_storage_units({{image['max_rev_size']}});
-        </script>
-      </div>
-      <div class="revision_actions_area">
-        <div>
-          <a href="{{url_for('image_review.deal', category = category, prev_image = image['title'])}}">
-            Next
-          </a>
+              document.getElementById('last_modification').textContent =
+                format_local_datetime('{{image['last_modification']}}');
+
+              document.getElementById('all_revs_size').textContent =
+                format_storage_units({{image['all_revs_size']}});
+
+              document.getElementById('max_rev_size').textContent =
+                format_storage_units({{image['max_rev_size']}});
+            </script>
+          </div>
+          <div class="revision_section">
+            <div> Revisions: </div>
+            <div class="revision_strip" id="revision_strip">
+            </div>
+          </div>
+          <div>
+            <form id="review_form">
+              <div>
+                <label for="comments">Comments:</label>
+              </div>
+              <div>
+                <textarea id="comments" name="comments" maxlength=256 rows=5
+                  style="resize: none; width: 100%; box-sizing: border-box;"
+                  placeholder="Enter your comments here in case you find an special case"
+                  ></textarea>
+              </div>
+              <div style="display: flex; justify-content: space-between">
+                <div>
+                  <button type="submit"> Save review </button>
+                  <span id="form_submit_result"></span>
+                </div>
+              {% if category %}
+                <div>
+                  <a href="{{url_for('image_review.deal',
+                                     category = category,
+                                     prev_image = image['title'])}}">
+                    Next file
+                  </a>
+                </div>
+              {% endif %}
+              </div>
+            </form>
+            <script type="module">
+              import { set_text_and_fadeout }
+              from '{{url_for('static', filename='simple_effects.js')}}';
+
+              const form = document.getElementById('review_form');
+              const form_submit_result = document.getElementById('form_submit_result');
+
+              form.addEventListener('submit', async (event) => {
+                //This form will be sent with the PUT method, so prevent default handling
+                event.preventDefault();
+
+                //Gather the form data before sending
+                const formData = new FormData(form);
+
+                //Send the form now
+                const response = await fetch(
+                  '{{url_for('image_review.view', image_title = image['title'])}}',
+                  { method: 'PUT', body: formData });
+
+                //Briefly show the form response from the server
+                set_text_and_fadeout(form_submit_result,
+                                      response.ok?
+                                        await response.text():
+                                        `${response.status}: ${response.statusText}`,
+                                      1000,
+                                      500);
+              });
+            </script>
+          </div>
         </div>
       </div>
     </div>
 
-    <script type=module>
+    <script type="module">
       import { format_local_datetime, format_storage_units }
       from '{{url_for('static', filename='format_utils.js')}}';
       import { query_image_info, query_similar_images }
@@ -68,7 +130,7 @@
       const revision_dimensions = document.getElementById('revision_dimensions');
       const revision_time = document.getElementById('revision_time');
       const similar_img_strip = document.getElementById('similar_img_strip');
-      const revisions_strip = document.getElementById('revisions_strip');
+      const revision_strip = document.getElementById('revision_strip');
 
       const similar_images = {{similar_images|tojson}};
       const similar_img_strip_items = {};
@@ -97,8 +159,8 @@
           revision_time.textContent = format_local_datetime(revisions[new_image].timestamp);
 
           //Pass the selection status (subclass) to the new selected image
-          revisions_strip.children[selected_image].classList.remove('selected');
-          revisions_strip.children[new_image].classList.add('selected');
+          revision_strip.children[selected_image].children[0].classList.remove('selected');
+          revision_strip.children[new_image].children[0].classList.add('selected');
 
           display_similar_images(revisions[selected_image].timestamp, false);
           display_similar_images(revisions[new_image].timestamp, true);
@@ -123,14 +185,43 @@
         revisions = image_info.revisions;
 
         for (let index = 0; index < revisions.length; index++) {
-          //Create a new selectable item in the revisions strip
-          const img_container = revisions_strip.appendChild(document.createElement('div'));
-          img_container.classList.add('thumbnail_strip_item', 'selectable');
+          //Create a new item in the thumbnail strip
+          const rev_strip_item = revision_strip.appendChild(document.createElement('div'));
+          rev_strip_item.classList.add('revision');
+          rev_strip_item.innerHTML = `
+            <div class="revision_thumbnail" id="revision_img_div_${index}">
+              <img id="revision_img_${index}">
+            </div>
+            <div class="revision_form">
+              <div>
+                <label for="action_${index}"> Action: </label>
+                <select id="action_${index}" form="review_form" name="action_${index}"></select>
+              </div>
+              <div>
+                <label for="reason_${index}"> Reason: </label>
+                <select id="reason_${index}" form="review_form" name="reason_${index}"></select>
+              </div>
+            </div>
+          `;
 
-          //Add the thumbnail to the selectable item
-          const img = img_container.appendChild(document.createElement('img'));
+          //Set the source to the revision thumbnail
+          const img = document.getElementById(`revision_img_${index}`);
           img.src = revisions[index].thumburl;
-          img.addEventListener('click', () => { select_image(index); })
+
+          //Add a click event listener to the selectable thumbnail container
+          const img_container = document.getElementById(`revision_img_div_${index}`);
+          img_container.addEventListener('click', () => { select_image(index); });
+
+          //Add options for testing purposes
+          const form_action = document.getElementById(`action_${index}`);
+          const test_action = new Option('Example action', 'example_action', true);
+          test_action.title = 'Test tooltip for example action';
+          form_action.add(test_action);
+
+          const form_reason = document.getElementById(`reason_${index}`);
+          const test_reason = new Option('Example reason', 'example_reason', true);
+          test_reason.title = 'Test tooltip for example reason';
+          form_reason.add(test_reason);
         }
 
         select_image(selected_image);  //Refresh the selected image
@@ -173,9 +264,9 @@
 
             if (revision_referenced) {
               //Add a new thumbnail to the similar image strip using information provided by the
-              //wiki
+              //wiki. Make it initially invisible until a related revision is selected.
               const img_container = similar_img_strip.appendChild(document.createElement('div'));
-              img_container.classList.add('thumbnail_strip_item');
+              img_container.classList.add('similar_image');
               img_container.style.display = 'none';
 
               const anchor = img_container.appendChild(document.createElement('a'));

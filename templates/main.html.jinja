@@ -1,15 +1,20 @@
 <!doctype html>
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title> Main menu </title>
   </head>
   <body>
+  {% filter indent(width = 4, first = True) %}
     {% include 'top_bar.html.jinja' %}
+  {% endfilter %}
 
     <p>Welcome to the MediaWiki cleanup assistant!</p>
 
-    <p> Please select a cleanup strategy. Files will be selected automatically for you based on the
-    one you select:</p>
+    <H1> Cleanup Strategies </H1>
+
+    <p> Help us clean the wiki by selecting a cleanup strategy below. Files will be selected
+    automatically for you based on the one you select:</p>
 
     <ul>
       <li> Unused content:
@@ -37,6 +42,13 @@
 #}
         </ul>
       </li>
+    </ul>
+
+    <H1> Settings </H1>
+
+    <ul>
+      <li><a href="{{url_for('password_update.view')}}"> Update your password
+      </a></li>
     </ul>
 {#
     Progress:

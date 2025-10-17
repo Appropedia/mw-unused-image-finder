@@ -6,11 +6,9 @@ from modules.model import db
 def init_schema() -> None:
   db.get().execute(
     'CREATE TABLE IF NOT EXISTS image_concessions('
-      'user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, '
-      'image_id INTEGER NOT NULL REFERENCES images(id) ON DELETE CASCADE, '
-      'timestamp INTEGER NOT NULL, '
-      'UNIQUE(image_id), '
-      'UNIQUE(user_id))')
+      'user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE, '
+      'image_id INTEGER UNIQUE NOT NULL REFERENCES images(id) ON DELETE CASCADE, '
+      'timestamp INTEGER NOT NULL)')
 
 #Create a new image concession for a given user or update an existing one
 def write(user_id: int, image_id: int) -> None:

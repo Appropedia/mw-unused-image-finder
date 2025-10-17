@@ -1,87 +1,141 @@
+/* Container for the whole page */
 div.global_container {
+  display: flex;
+  flex-direction: column;
+  min-height: 97vh;         /* Cover the entire viewport vertically */
+  max-height: min-content;  /* Grow to minimum height of content if space is insufficient */
+}
+
+/* Container for page panels that divide the viewport vertically */
+div.global_container div.panel_container {
+  flex-grow: 1;
   display: grid;
-  grid-template-areas:
-    "current_image   revision_info"
-    "current_image   similar_images"
-    "current_image   revision_actions"
-    "revision_select revision_actions"
-    "image_info      revision_actions";
   grid-template-columns: 60% auto;
-  gap: 2px;
+  gap: 2px;                   /* Create grid lines by setting background color, gaps and padding */
+  padding: 2px;
   background-color: #000000;
-  padding: 2px;
 }
 
-@media (max-width: 1000px) {
-  div.global_container {
-    grid-template-areas:
-      "current_image"
-      "revision_info"
-      "similar_images"
-      "revision_select"
-      "image_info"
-      "revision_actions";
-    grid-template-columns: 100%;
-  }
+/* Container for a single page panel */
+div.panel_container div.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-div.global_container div {
-  background-color: #FFFFFF;
-  padding: 2px;
+/* Common properties for all divs inside panels */
+div.panel > div {
+  padding: 0.25em;
+  background-color: #FFFFFF;  /* Background color for all small panels*/
 }
 
-div.global_container div.current_image_area {
-  grid-area: current_image;
+/* Container for the currently selected image */
+div.panel div.current_img {
+  flex: 1 120px;        /* Set a minimum size and allow growing */
   display: grid;
   place-items: center;
-  aspect-ratio: 9 / 4;
+  min-height: 0;        /* Allow children to be scaled down to any height */
 }
 
-div.current_image_area img {
-  min-width: 0;
+/* Currently selected image */
+div.current_img img {
+  min-width: 0;      /* Allow scaling down to the container size or keep intrinsic size */
   min-height: 0;
   max-width: 100%;
   max-height: 100%;
 }
 
-div.global_container div.revision_info_area {
-  grid-area: revision_info;
-}
-
-div.global_container div.similar_images_area {
-  grid-area: similar_images;
-  min-width: 0;
-}
-
-div.global_container div.revision_select_area {
-  grid-area: revision_select;
-  min-width: 0;
-}
-
-div.global_container div.image_info_area {
-  grid-area: image_info;
-}
-
-div.global_container div.revision_actions_area {
-  grid-area: revision_actions;
-}
-
-div.thumbnail_strip {
+/* Horizontal strip for similar image thumbnails */
+div.panel div.similar_image_strip {
   display: flex;
   overflow-x: auto;
-  height: 140px;    /* 120px maximum thumbnail height + 10px for padding on top and bottom */
+  min-height: 140px;  /* 120px maximum thumbnail height + 10px for padding on top and bottom */
 }
 
-div.thumbnail_strip div.thumbnail_strip_item {
+/* Container for similar image thumbnails */
+div.similar_image_strip div.similar_image {
+  display: grid;        /* Create a 1x1 grid with padding to separate thumbnails */
+  place-items: center;
+  padding: 10px;
+  min-width: 120px;     /* Set a fixed size of 120px x 120px */
+  max-width: 120px;
+  min-height: 120px;
+  max-height: 120px;
+}
+
+/* Similar image thumbnail */
+div.similar_image img {
+  display: block;   /* Prevent hyperlink anchor to add unnecessary height */
+}
+
+/* Container for the revision section */
+div.panel div.revision_section {
+  flex: 1 1 auto;           /* Allow growing but preserve minimum child size  */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Vertical strip for revision thumbnails and forms */
+div.revision_section div.revision_strip {
+  flex: 1 140px;            /* Set a minimum size and allow growing */
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Container for revision thumbnails and forms */
+div.revision_strip div.revision {
+  display: flex;
+}
+
+/* Container for revision thumbnails */
+div.revision div.revision_thumbnail {
   display: grid;
   place-items: center;
   padding: 10px;
+  min-width: 120px;
+  max-width: 120px;
+  min-height: 120px;
+  max-height: 120px;
 }
 
-div.thumbnail_strip_item.selectable.selected {
+/* Color the frame of the currently selected revision thumbnail */
+div.revision_thumbnail.selected {
   background-color: #406080;
 }
 
-div.thumbnail_strip_item.selectable:not(.selected):hover {
+/* Color the frame of the currently hovered revision thumbnail */
+div.revision_thumbnail:not(.selected):hover {
   background-color: #6090C0;
+}
+
+/* Container for revision forms */
+div.revision div.revision_form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Adjustments for mobile screens */
+@media (max-width: 1000px) {
+  /* Change the global container to the default div type (block) so height is calculated
+     automatically, allowing for vertical scrolling if needed */
+  div.global_container {
+    display: initial;
+  }
+
+  /* Reduce the amount of columns to 1 */
+  div.global_container div.panel_container {
+    grid-template-columns: 100%;
+  }
+
+  /* Force an aspect ratio on the current image div, so that it's height doesn't become too large */
+  div.panel div.current_img {
+    flex: initial;
+    aspect-ratio: 2 / 1;
+  }
+
+  div.revision_section div.revision_strip {
+    flex: initial;
+  }
 }

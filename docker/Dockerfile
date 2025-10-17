@@ -61,6 +61,7 @@ EOF
 
 #Install the server application files
 COPY $SRC_DIR/app.py $SRC_DIR/update_images.py ./
+COPY $SRC_DIR/setup-admin-account.py $SRC_DIR/regenerate_user_password.py ./
 COPY $SRC_DIR/modules modules/
 COPY $SRC_DIR/templates templates/
 COPY $SRC_DIR/assets assets/
