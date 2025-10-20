@@ -24,18 +24,6 @@ def read_last_timestamp() -> str | None:
     'SELECT timestamp FROM revisions ORDER BY timestamp DESC LIMIT 1').fetchone()
   return None if row is None else row[0]
 
-#Create an iterator object that returns the timestamps and sizes associated to the revisions of a
-#given image
-#[development_only]
-def get_timestamps_and_sizes(image_id: int) -> Iterator[tuple[str, int]]:
-  cursor = db.get().cursor()
-  cursor.execute('SELECT timestamp, size FROM revisions WHERE image_id = ?', (image_id,))
-
-  while True:
-    row = cursor.fetchone()
-    if row is None: break
-    yield row
-
 #Update the size of an image revision
 def update_size(id_: int, size: int) -> None:
   with db.get() as con:

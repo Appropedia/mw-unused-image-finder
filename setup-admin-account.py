@@ -2,7 +2,8 @@
 
 from getpass import getpass
 from modules.common import config
-from modules.model import db, users, privileges
+from modules.model import db
+from modules.model.table import users, privileges
 from modules.model.view import user_privileges
 from modules.utility import random_password, password_rules
 

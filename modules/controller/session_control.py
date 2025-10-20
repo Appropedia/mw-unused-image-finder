@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from flask import Blueprint, session, redirect, url_for, request, render_template, abort, flash, g
-from modules.model import users
+from modules.model.table import users
 
 blueprint = Blueprint('session_control', __name__)
 

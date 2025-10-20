@@ -2,7 +2,8 @@
 
 from argparse import ArgumentParser
 from modules.common import config
-from modules.model import db, users
+from modules.model import db
+from modules.model.table import users
 from modules.utility import random_password, password_rules
 
 config.load('config.toml', warn_unknown = False)

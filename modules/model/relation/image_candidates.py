@@ -1,6 +1,7 @@
 import enum
 from time import time
-from modules.model import db, image_concessions
+from modules.model import db
+from modules.model.table import image_concessions
 from modules.model.view import image_usage
 
 #Acquire the next image available from a specified usage category on behalf of a specified user

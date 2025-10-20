@@ -6,7 +6,6 @@ from modules.common import config, app_config
 from modules.utility import random_password
 from modules.mediawiki import cors_proxy
 from modules.controller import default, session_control, password_update, image_review
-from modules.controller.development import file_search, file_info
 from modules.model import db
 
 #Load the configuration file. Do this only after importing every module so they've had a chance to
@@ -20,8 +19,6 @@ app.register_blueprint(default.blueprint)
 app.register_blueprint(session_control.blueprint)
 app.register_blueprint(password_update.blueprint)
 app.register_blueprint(image_review.blueprint)
-app.register_blueprint(file_search.blueprint, url_prefix = '/development')
-app.register_blueprint(file_info.blueprint, url_prefix = '/development')
 
 #Load the flask secrey key file
 for retry_count in range(2):

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, abort, g, redirect, url_for, render_template
 from modules.controller import session_control
-from modules.model import image_concessions
+from modules.model.table import image_concessions
 from modules.model.view import image_usage, image_revisions, similar_images
 from modules.model.relation import image_candidates
 from modules.common import config

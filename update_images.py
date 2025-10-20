@@ -4,7 +4,8 @@ from datetime import datetime
 from argparse import ArgumentParser
 import urllib3
 from modules.common import config
-from modules.model import db, images, revisions, hashes, unused_images
+from modules.model import db
+from modules.model.table import images, revisions, hashes, unused_images
 from modules.model.view import pending_hashes
 from modules.model.relation import images_without_revisions
 from modules.mediawiki import api_client

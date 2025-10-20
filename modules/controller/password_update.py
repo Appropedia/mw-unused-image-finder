@@ -1,6 +1,6 @@
 from flask import Blueprint, session, request, render_template, flash, redirect, url_for
 from modules.controller import session_control
-from modules.model import users
+from modules.model.table import users
 from modules.utility import password_rules
 
 blueprint = Blueprint('password_update', __name__)

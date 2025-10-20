@@ -1,4 +1,5 @@
-from modules.model import db, hashes, unused_images
+from modules.model import db
+from modules.model.table import hashes, unused_images
 from modules.model.view import image_revisions
 
 _hash_fields = ', '.join(f'H{i}' for i in range(8))
