@@ -1,13 +1,13 @@
 <div style="display: flex; justify-content: space-between">
   <div>
-  {% if request.endpoint != 'default.view' %}
+{% if request.endpoint != 'default.view' %}
     <a href="{{url_for('default.view')}}">Back to main</a>
-  {% endif %}
+{% endif %}
   </div>
   <div>
-  {% if session['user_name'] %}
+{% if session['user_name'] %}
     {{session['user_name']}}
-  {% endif %}
+{% endif %}
     <a href="{{url_for('session_control.logout')}}">Log out</a>
   </div>
 </div>

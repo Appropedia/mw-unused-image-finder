@@ -7,4 +7,4 @@ blueprint = Blueprint('default', __name__)
 @blueprint.route('/')
 @session_control.login_required
 def view():
-  return render_template('main.html.jinja')
+  return render_template('view/main.jinja.html')

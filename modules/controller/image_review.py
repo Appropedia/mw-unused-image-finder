@@ -80,4 +80,4 @@ def view(image_title: str):
   #The concession is also made here in case of users sharing URLs to the served images, making it
   #less probable to offer that same image to yet another user.
 
-  return render_template('image_review.html.jinja', **render_params)
+  return render_template('view/image_review.jinja.html', **render_params)

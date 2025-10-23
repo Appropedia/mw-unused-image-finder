@@ -12,7 +12,7 @@ def login():
 
   match request.method:
     case 'GET':
-      return render_template('login.html.jinja')
+      return render_template('view/login.jinja.html')
     case  'POST':
       #Make sure all form fields are provided
       if 'user_name' not in request.form or \
@@ -25,11 +25,11 @@ def login():
 
       if not password_valid:
         flash('Invalid user credentials.')
-        return render_template('login.html.jinja')
+        return render_template('view/login.jinja.html')
 
       if user_status == 'banned':
         flash('Your account has been banned. Please contact your site administrator for details.')
-        return render_template('login.html.jinja')
+        return render_template('view/login.jinja.html')
 
       #Set the session status to active and redirect to the default view
       session['user_name'] = request.form['user_name']

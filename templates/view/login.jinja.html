@@ -3,6 +3,7 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title> Log in </title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
   </head>
   <body>
     <p>Welcome to the MediaWiki cleanup assistant!</p>
@@ -19,9 +20,9 @@
       <div>
         <button type="submit">Log in</button>
       </div>
-    {% for message in get_flashed_messages() %}
+{% for message in get_flashed_messages() %}
       <div style="color: red;">{{message}}</div>
-    {% endfor %}
+{% endfor %}
     </form>
   </body>
 </html>

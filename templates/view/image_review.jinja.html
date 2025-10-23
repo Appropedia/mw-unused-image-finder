@@ -3,15 +3,16 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title> Review - {{image['title']}} </title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
     <link rel="stylesheet" type="text/css"
-          href="{{url_for('static', filename='image_review.css')}}">
+          href="{{url_for('static', filename = 'image_review.css')}}">
   </head>
   <body>
     <div class="global_container">
       <div>
-      {% filter indent(width = 8, first = True) %}
-        {% include 'top_bar.html.jinja' %}
-      {% endfilter %}
+{% filter indent(width = 8, first = True) %}
+  {% include 'common/top_bar.jinja.html' %}
+{% endfilter %}
       </div>
 
       <h1><a id='wiki_link' target="_blank">{{image['title']}}</a></h1>
@@ -41,7 +42,7 @@
 
             <script type="module">
               import { format_local_datetime, format_storage_units }
-              from '{{url_for('static', filename='format_utils.js')}}';
+              from '{{url_for('static', filename = 'format_utils.js')}}';
 
               document.getElementById('last_modification').textContent =
                 format_local_datetime('{{image['last_modification']}}');
@@ -74,7 +75,7 @@
                   <button type="submit"> Save review </button>
                   <span id="form_submit_result"></span>
                 </div>
-              {% if category %}
+{% if category %}
                 <div>
                   <a href="{{url_for('image_review.deal',
                                      category = category,
@@ -82,12 +83,12 @@
                     Next file
                   </a>
                 </div>
-              {% endif %}
+{% endif %}
               </div>
             </form>
             <script type="module">
               import { set_text_and_fadeout }
-              from '{{url_for('static', filename='simple_effects.js')}}';
+              from '{{url_for('static', filename = 'simple_effects.js')}}';
 
               const form = document.getElementById('review_form');
               const form_submit_result = document.getElementById('form_submit_result');
@@ -97,12 +98,12 @@
                 event.preventDefault();
 
                 //Gather the form data before sending
-                const formData = new FormData(form);
+                const form_data = new FormData(form);
 
                 //Send the form now
                 const response = await fetch(
                   '{{url_for('image_review.view', image_title = image['title'])}}',
-                  { method: 'PUT', body: formData });
+                  { method: 'PUT', body: form_data });
 
                 //Briefly show the form response from the server
                 set_text_and_fadeout(form_submit_result,
@@ -120,9 +121,9 @@
 
     <script type="module">
       import { format_local_datetime, format_storage_units }
-      from '{{url_for('static', filename='format_utils.js')}}';
+      from '{{url_for('static', filename = 'format_utils.js')}}';
       import { query_image_info, query_similar_images }
-      from '{{url_for('static', filename='image_review.js')}}';
+      from '{{url_for('static', filename = 'image_review.js')}}';
 
       const wiki_link = document.getElementById('wiki_link');
       const current_image = document.getElementById('current_image');

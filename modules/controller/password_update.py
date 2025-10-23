@@ -11,7 +11,7 @@ blueprint = Blueprint('password_update', __name__)
 def view():
   match request.method:
     case 'GET':
-      return render_template('password_update.html.jinja')
+      return render_template('view/password_update.jinja.html')
     case 'POST':
       #Make sure all form fields are provided
       if 'current_password' not in request.form or \
@@ -22,20 +22,20 @@ def view():
       #Validate the password confirmation
       if request.form['new_password'] != request.form['confirmed_password']:
         flash('New passwords don\'t match. Try again.')
-        return render_template('password_update.html.jinja')
+        return render_template('view/password_update.jinja.html')
 
       #Do a password rule check
       password_ok, password_message = password_rules.check(request.form['new_password'])
       if not password_ok:
         flash(password_message)
-        return render_template('password_update.html.jinja')
+        return render_template('view/password_update.jinja.html')
 
       #Validate the current password
       password_valid = users.authenticate(name = session['user_name'],
                                           password = request.form['current_password'])[0]
       if not password_valid:
         flash('Current password is incorrect.')
-        return render_template('password_update.html.jinja')
+        return render_template('view/password_update.jinja.html')
 
       #Perform the password change now
       users.update_password_and_status(session['user_name'], request.form['new_password'], 'active')
