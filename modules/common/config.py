@@ -25,7 +25,7 @@ class _nested_config:
   #   - Type values (str, int, etc.) indicate the type of a required configuration.
   #   - Values of any other type indicate the default value and type of an optional configuration.
   # - path: A tuple containing the names of parent configurations, in descending order of hierarchy.
-  def register(self, descriptors: dict, path: tuple = ()):
+  def register(self, descriptors: dict[str, any], path: tuple[str, ...] = ()):
     for name, desc in descriptors.items():
       if isinstance(desc, dict):
         #If the provided descriptor is nested, check whether it's already registered
@@ -53,7 +53,7 @@ class _nested_config:
   # - initializers: A dictionary containing the values to load, with keys indicating the
   #   configuration names. Nested dictionaries indicate nested configuration initializers.
   # - path: A tuple containing the names of parent configurations, in descending order of hierarchy.
-  def load(self, initializers: dict, warn_unknown: bool, path: tuple = ()):
+  def load(self, initializers: dict[str, any], warn_unknown: bool, path: tuple[str, ...] = ()):
     for name, value in initializers.items():
       #Make sure the provided initializer refers to a registered configuration (skip it otherwise)
       if name not in self._descriptors:
@@ -80,7 +80,7 @@ class _nested_config:
   #Check for missing configurations and load defaults, if available
   #Parameters:
   # - path: A tuple containing the names of parent configurations, in descending order of hierarchy.
-  def check_consistency(self, path: tuple = ()):
+  def check_consistency(self, path: tuple[str, ...] = ()):
     for name, desc in self._descriptors.items():
       if isinstance(desc, dict):
         #If the descriptor is nested, recurse
@@ -109,7 +109,7 @@ root = _nested_config()
 #Parameters:
 # - descriptors: A dictionary describing the structure of the configuration. Check the register
 #   method of the _nested_config class for details.
-def register(descriptors: dict):
+def register(descriptors: dict[str, any]):
   root.register(descriptors)
 
 #Load configurations from a .toml file

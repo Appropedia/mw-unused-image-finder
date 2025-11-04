@@ -1,7 +1,7 @@
 <div style="display: flex; justify-content: space-between">
   <div>
-{% if request.endpoint != 'default.view' %}
-    <a href="{{url_for('default.view')}}">Back to main</a>
+{% if top_left_link %}
+    <a href="{{url_for(top_left_link[0])}}">{{top_left_link[1]}}</a>
 {% endif %}
   </div>
   <div>

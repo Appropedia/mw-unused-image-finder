@@ -6,7 +6,7 @@ import tomllib
 #Parameters:
 # - taget: The nested dictionary where data is put.
 # - overlay: The nested dictionary from where data is taken.
-def overlay(target_dict: dict, overlay_dict: dict):
+def overlay(target_dict: dict[str, any], overlay_dict: dict[str, any]):
   #Iterate the overlay dictionary
   for o_key, o_val in overlay_dict.items():
     if o_key not in target_dict:
@@ -28,11 +28,11 @@ def overlay(target_dict: dict, overlay_dict: dict):
         target_dict[o_key] = o_val
 
 #Create a generator expression that returns all non dictionary (nested) items in a dictionary.
-def non_dict_items(d: dict):
+def non_dict_items(d: dict[str, any]):
   return ((key, val) for key, val in d.items() if not isinstance(val, dict))
 
 #Create a generator expression that returns all dictionary (nested) items in a dictionary.
-def dict_items(d: dict):
+def dict_items(d: dict[str, any]):
   return ((key, val) for key, val in d.items() if isinstance(val, dict))
 
 #Serialize a dictionary containing TOML data as text.
@@ -40,7 +40,7 @@ def dict_items(d: dict):
 # - d: The dictionary with TOML data.
 # - f: A text file descriptor to write data to.
 # - path: For recursion purposes only - the current path in the TOML structure.
-def generate_toml(d: dict, f: io.TextIOWrapper, path: tuple = ()):
+def generate_toml(d: dict[str, any], f: io.TextIOWrapper, path: tuple[str, ...] = ()):
   header = True
   for key, val in non_dict_items(d):
     #Print the table header once only if the path isn't empty (e.g.: "root")

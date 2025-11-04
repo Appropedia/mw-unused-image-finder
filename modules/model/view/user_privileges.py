@@ -3,13 +3,14 @@ from modules.model import db
 #Schema initialization function
 @db.schema
 def init_schema() -> None:
+  #This view allows to query for the privileges of a specific user
   db.get().execute(
     'CREATE VIEW IF NOT EXISTS user_privileges_view(user_name, privilege_name) AS '
     'SELECT users.name, privileges.name FROM users '
     'INNER JOIN privileges ON users.id = privileges.user_id')
 
 #Get the user names of any previously registered administrator accounts
-def get_administrator_names() -> tuple[str]:
+def get_administrator_names() -> tuple[str, ...]:
   cursor = db.get().execute(
     'SELECT user_name FROM user_privileges_view WHERE privilege_name = "admin"')
   cursor.row_factory = lambda cur, row: row[0]
@@ -17,8 +18,6 @@ def get_administrator_names() -> tuple[str]:
 
 #Check whether a specific user has a given privilege
 def check(user_name: str, privilege_name: str) -> bool:
-  row = db.get().execute(
-    'SELECT 1 FROM user_privileges_view WHERE user_name = ? AND privilege_name = ?',
-    (user_name, privilege_name)).fetchone()
-
-  return row is not None
+  return bool(db.get().execute(
+    'SELECT EXISTS (SELECT 1 FROM user_privileges_view WHERE user_name = ? AND privilege_name = ?)',
+    (user_name, privilege_name)).fetchone()[0])

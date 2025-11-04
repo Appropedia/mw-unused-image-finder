@@ -17,7 +17,7 @@ def _on_load():
 #Parameters:
 # - params: A dictionary containing query parameters
 #Return value: A generator object that returns dictionaries with response data
-def query(params: dict) -> Iterator[dict]:
+def query(params: dict[str, str]) -> Iterator[dict]:
   params['format'] = 'json'   #Make sure to request json format
 
   while True:

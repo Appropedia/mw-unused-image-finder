@@ -7,7 +7,7 @@ _hash_fields = ', '.join(f'H{i}' for i in range(8))
 #Schema initialization function
 @db.schema
 def init_schema() -> None:
-  #This view allows to query the timestamp and one of the hashes for each revision of a specific
+  #This view allows to query for the timestamp and one of the hashes for each revision of a specific
   #image
   db.get().execute(
     f'CREATE VIEW IF NOT EXISTS '
@@ -34,7 +34,7 @@ def init_schema() -> None:
 #           <bool> - a flag indicating whether the image is unused in the wiki
 #         - key: 'revisions'
 #           <list[str]> - the timestamps of all matching revisions
-def search(ref_image_id: int, max_dist: int) -> dict[dict[dict[bool, list[str]]]]:
+def search(ref_image_id: int, max_dist: int) -> dict[str, dict[str, dict[str, bool | list[str]]]]:
   con = db.get()
 
   #Obtain the timestamp and a reference hash for each of the revisions of the given image (every
@@ -42,12 +42,13 @@ def search(ref_image_id: int, max_dist: int) -> dict[dict[dict[bool, list[str]]]
   ref_hash_cursor = con.execute(
     f'SELECT revision_timestamp, {_hash_fields} FROM reference_hashes_view WHERE image_id = ?',
     (ref_image_id,))
-  ref_hash_cursor.row_factory = lambda cur, row: (row[0], row[1:9])
+  ref_hash_cursor.row_factory = lambda cur, row: (row[0],
+                                                  None if None in row[1:9] else bytes(row[1:9]))
 
   result = {}
   for ref_revision_timestamp, ref_hash in ref_hash_cursor:
     #Make sure the image is hashed (e.g. not an unsupported file type)
-    if ref_hash[0] is None:
+    if ref_hash is None:
       continue
 
     #Perform a search for the reference hash and iterate over the results

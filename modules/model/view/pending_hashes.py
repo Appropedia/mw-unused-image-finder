@@ -16,10 +16,10 @@ def total() -> int:
 
 #Create an iterator object that returns the id and url of every revision that hasn't been hashed yet
 def get() -> Iterator[tuple[int, str]]:
-  cursor = db.get().cursor()
-  cursor.execute('SELECT revision_id, revision_url FROM pending_hashes_view')
+  con = db.get()
 
   while True:
-    row = cursor.fetchone()
+    row = con.execute(
+      'SELECT revision_id, revision_url FROM pending_hashes_view LIMIT 1').fetchone()
     if row is None: break
     yield row

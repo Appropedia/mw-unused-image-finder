@@ -44,10 +44,10 @@ def synchronize_add_one(image_id: int, timestamp: str, url: str) -> bool:
 
   #Insert the revision only if it isn't in the table already
   with con:
-    row = con.execute(
+    cursor = con.execute(
       'INSERT INTO revisions (image_id, timestamp, url) VALUES (?, ?, ?) '
-      'ON CONFLICT (image_id, timestamp) DO NOTHING RETURNING 1',
-      (image_id, timestamp, url)).fetchone()
+      'ON CONFLICT (image_id, timestamp) DO NOTHING',
+      (image_id, timestamp, url))
 
   #Note: Table insertion order is important, as inserting into revisions first will cause other
   #restrictions such as foreign keys to be checked, causing an exception that skips the code below
@@ -58,7 +58,7 @@ def synchronize_add_one(image_id: int, timestamp: str, url: str) -> bool:
       'INSERT INTO updated_revisions (image_id, timestamp) VALUES (?, ?)', (image_id, timestamp))
 
   #Return true if revision was inserted (did not fail the unique constraint check)
-  return row is not None
+  return cursor.rowcount == 1
 
 #Create an iterator object that returns the image id and timestamp of all revisions that would be
 #deleted by ending a full synchronization process
@@ -102,7 +102,7 @@ def full_synchronize_end() -> None:
   con.execute('DROP TABLE updated_revisions')
 
 #End a partial synchronization process for the revisions table by deleting all revisions of the
-#images that have an image id in the tracking table but are missing a timestamp
+#images that have an image id but are lacking a timestamp in the tracking table
 def partial_synchronize_end() -> None:
   con = db.get()
 

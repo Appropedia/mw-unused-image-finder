@@ -19,12 +19,12 @@ def init_schema() -> None:
     'CREATE INDEX IF NOT EXISTS hashes_revision_id ON hashes(revision_id)')
 
 #Create a new hash for a given image revision
-def create(revision_id: int, hash_: tuple) -> None:
+def create(revision_id: int, hash_: bytes | None) -> None:
   with db.get() as con:
     con.execute(
       f'INSERT INTO hashes (revision_id, {', '.join(f'H{i}' for i in range(8))}) '
       f'VALUES ({', '.join('?' * 9)})',
-      (revision_id,) + hash_)
+      (revision_id,) + ((None,) * 8 if hash_ is None else tuple(hash_)))
 
 #Perform a recursive depth-first search on all image hashes in the table that are within a maximum
 #hamming distance from a given reference hash
@@ -36,7 +36,7 @@ def create(revision_id: int, hash_: tuple) -> None:
 # - cand_dist: For recursive calls only - The hamming distance of the current candidate hash.
 #Return value: A set with the revision ids of the images of which the hash is within the maximum
 #              hamming distance.
-def search(ref_hash: tuple, max_dist: int, cand_hash: tuple = (), cand_dist: int = 0) -> set[int]:
+def search(ref_hash: bytes, max_dist: int, cand_hash: bytes = b'', cand_dist: int = 0) -> set[int]:
   con = db.get()
 
   #The hash level represents the current depth of the search. It counts the amount of bytes of the
@@ -48,7 +48,7 @@ def search(ref_hash: tuple, max_dist: int, cand_hash: tuple = (), cand_dist: int
   hash_byte_cursor = con.execute(
     f'SELECT DISTINCT H{hash_level} FROM hashes WHERE H{hash_level} IS NOT NULL'
     f'{''.join(f' AND H{i}=?' for i in range(hash_level))}',
-    cand_hash)
+    tuple(cand_hash))
   hash_byte_cursor.row_factory = lambda cur, row: row[0]
 
   matches = set()
@@ -66,7 +66,7 @@ def search(ref_hash: tuple, max_dist: int, cand_hash: tuple = (), cand_dist: int
       continue
 
     #The hamming distance is adequate. Append this byte to the new candidate hash.
-    new_cand_hash = cand_hash + (hash_byte,)
+    new_cand_hash = cand_hash + hash_byte.to_bytes()
 
     if hash_level < 7:
       #Maximum hash level not reached - recurse
@@ -76,7 +76,7 @@ def search(ref_hash: tuple, max_dist: int, cand_hash: tuple = (), cand_dist: int
       #hash and add the corresponding revision ids to the matches.
       rev_id_cursor = con.execute(
         f'SELECT revision_id FROM hashes WHERE {' AND '.join(f'H{i}=?' for i in range(8))}',
-        new_cand_hash)
+        tuple(new_cand_hash))
       rev_id_cursor.row_factory = lambda cur, row: row[0]
       matches.update(rev_id_cursor.fetchall())
 

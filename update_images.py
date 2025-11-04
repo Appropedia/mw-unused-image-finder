@@ -180,20 +180,20 @@ def update_hashes():
     revisions.update_size(revision_id, file_size)
 
     match status:
-      case perceptual_hash.status.OK:
+      case perceptual_hash.Status.OK:
         #Store the hashes now. Do this as the last step, as this effectively removes the image from
         #the pending hashes view.
         for h in new_hashes:
           hashes.create(revision_id, h)
         print('OK')
-      case perceptual_hash.status.OUT_OF_MEM:
+      case perceptual_hash.Status.OUT_OF_MEM:
         #There was not enough memory for processing the image. Don't store a hash, so this can be
         #retried later for this image.
         print('Not enough memory')
-      case perceptual_hash.status.UNSUPPORTED:
+      case perceptual_hash.Status.UNSUPPORTED:
         #The image could not be processed, possibly because its type is unsupported or there was
         #another error. Store a null hash for it, so it won't be retried.
-        hashes.create(revision_id, (None,) * 8)
+        hashes.create(revision_id, None)
         print('Not a recognized image file')
 
   print('Done')

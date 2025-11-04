@@ -30,8 +30,8 @@ def read(name: str) -> tuple[int, str] | tuple[None, None]:
 
 #Check for user name availability
 def name_available(name: str) -> bool:
-  return db.get().execute(
-    'SELECT EXISTS(SELECT 1 FROM users WHERE name = ?)', (name,)).fetchone()[0] == 0
+  return bool(db.get().execute(
+    'SELECT NOT EXISTS (SELECT 1 FROM users WHERE name = ?)', (name,)).fetchone()[0])
 
 #Verify a user password and get their status
 def authenticate(name: str, password: str) -> tuple[bool, str | None]:
@@ -45,8 +45,8 @@ def authenticate(name: str, password: str) -> tuple[bool, str | None]:
 #Update user password and status, returning True if successful (e.g. the user exists)
 def update_password_and_status(name: str, password: str, status: str) -> bool:
   with db.get() as con:
-    row = con.execute(
-      'UPDATE users SET password = ?, status = ? WHERE name = ? RETURNING 1',
-      (generate_password_hash(password), status, name)).fetchone()
+    cursor = con.execute(
+      'UPDATE users SET password = ?, status = ? WHERE name = ?',
+      (generate_password_hash(password), status, name))
 
-  return row is not None
+  return cursor.rowcount == 1

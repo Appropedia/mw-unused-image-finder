@@ -10,6 +10,7 @@
   <body>
     <div class="global_container">
       <div>
+{% set top_left_link = ['default.view', 'Back to main'] %}
 {% filter indent(width = 8, first = True) %}
   {% include 'common/top_bar.jinja.html' %}
 {% endfilter %}

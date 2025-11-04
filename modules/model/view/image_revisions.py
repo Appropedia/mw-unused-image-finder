@@ -3,7 +3,7 @@ from modules.model import db
 #Schema initialization function
 @db.schema
 def init_schema() -> None:
-  #This view allows to query information for all revisions of all images
+  #This view allows to query for information on all revisions of all images
   db.get().execute(
     'CREATE VIEW IF NOT EXISTS '
     'image_revisions_view(image_id, image_title, revision_id, revision_timestamp, revision_size) '
