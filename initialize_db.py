@@ -9,11 +9,15 @@ from modules.model.table import unused_images
 from modules.model.table import users
 from modules.model.table import privileges
 from modules.model.table import image_concessions
+from modules.model.table import cleanup_actions
+from modules.model.table import cleanup_reasons
+from modules.model.table import cleanup_choices
 from modules.model.view import pending_hashes
 from modules.model.view import image_usage
 from modules.model.view import similar_images
 from modules.model.view import image_revisions
 from modules.model.view import user_privileges
+from modules.model.view import cleanup_action_reason_links
 
 config.load('config.toml', warn_unknown = False)
 

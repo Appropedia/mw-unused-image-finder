@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> Cleanup reason - {{reason_name}} </title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
+  </head>
+  <body>
+{% set top_left_link = ['cleanup_reason.handle_all', 'Back to cleanup reasons'] %}
+{% filter indent(width = 4, first = True) %}
+  {% include 'common/top_bar.jinja.html' %}
+{% endfilter %}
+    <H1> Cleanup reason: {{reason_name}} </H1>
+    <p> Description: {{description}} </p>
+{% if cleanup_actions %}
+    <p> The following actions are associated to this reason: </p>
+    <ul>
+  {% for action in cleanup_actions %}
+      <li><a href="{{action['url']}}"> {{action['name']}} </a></li>
+  {% endfor %}
+    </ul>
+{% else %}
+    <p> There are no actions associated to this reason </p>
+{% endif %}
+    <p>
+      You can manage all reasons associated to actions from
+      <a href="{{url_for('cleanup_action.handle_all')}}"> here </a>
+    </p>
+  </body>
+</html>
