@@ -34,7 +34,7 @@ def handle_single(reason: str) -> str:
 
 #Error handler for this blueprint
 @blueprint.errorhandler(HTTPException)
-def bad_request(e: HTTPException) -> tuple[str, int] | HTTPException:
+def request_failed(e: HTTPException) -> tuple[str, int] | HTTPException:
   if request.method == 'GET':
     #Give back the unmodified exception to the default handler in case of GET requests, since any
     #related error response is intended to be handled by browsers
@@ -135,8 +135,8 @@ def _validate_name_description() -> None:
   if len(request.form['description']) > DESCRIPTION_MAX_LEN:
     abort(400, 'FIELD_TOO_LONG,description')
 
-#Handle the return status of a cleanup_reasons module call, returning either 200 - 'OK' or the
-#status enumeration name accompanied by the corresponding HTTP error code
+#Handle the return status of a cleanup_reasons module call, returning either 200 - 'OK' or a
+#simplified error message accompanied by the corresponding HTTP error code
 def _handle_cleanup_reasons_return_status(status: cleanup_reasons.Status) -> str:
   match status:
     case cleanup_reasons.Status.SUCCESS:

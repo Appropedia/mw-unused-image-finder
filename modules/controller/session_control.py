@@ -64,7 +64,8 @@ def check(request_endpoint, route_handler: Callable):
 
   if g.user_status is None or g.user_status == 'banned':
     #Invalid or banned account, drop the session immediately
-    logout()
+    session.pop('user_name', None)
+    abort(401)
 
   if g.user_status == 'new_pass' and request_endpoint != 'password_update.view':
     #The account has a new generated password, prompt for password update

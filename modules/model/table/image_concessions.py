@@ -7,7 +7,7 @@ def init_schema() -> None:
   db.get().execute(
     'CREATE TABLE IF NOT EXISTS image_concessions('
       'user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE, '
-      'image_id INTEGER UNIQUE NOT NULL REFERENCES images(id) ON DELETE CASCADE, '
+      'image_id INTEGER NOT NULL REFERENCES images(id) ON DELETE CASCADE, '
       'timestamp INTEGER NOT NULL)')
 
 #Create a new image concession for a given user or update an existing one

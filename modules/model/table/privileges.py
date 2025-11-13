@@ -8,7 +8,7 @@ def init_schema() -> None:
       'user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, '
       'name TEXT NOT NULL, '
       'UNIQUE (user_id, name), '
-      'CHECK (name IN ("admin", "audit", "review", "plan")))')
+      "CHECK (name IN ('admin', 'audit', 'review', 'plan')))")
 
 #Grant a privilege to a given user
 def create(user_id: int, name: str) -> None:

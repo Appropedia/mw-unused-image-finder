@@ -51,7 +51,7 @@ def read_description(name: str) -> str | None:
   return None if row is None else row[0]
 
 #Read all cleanup actions and descriptions
-def read_all() -> tuple[tuple[str, str], ...]:
+def read_all() -> list[tuple[str, str]]:
   return db.get().execute(
     'SELECT name, description FROM cleanup_actions ORDER BY position ASC').fetchall()
 

@@ -10,7 +10,7 @@ def init_schema() -> None:
       'name TEXT UNIQUE NOT NULL, '
       'password TEXT NOT NULL, '
       'status TEXT NOT NULL, '
-      'CHECK (status IN ("new_pass", "active", "banned")))')
+      "CHECK (status IN ('new_pass', 'active', 'banned')))")
 
 #Create a new user and return the new id
 def create(name: str, password: str, status: str) -> int | None:

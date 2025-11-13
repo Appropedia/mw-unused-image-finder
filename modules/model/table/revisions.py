@@ -13,7 +13,7 @@ def init_schema() -> None:
       'timestamp TEXT NOT NULL, '
       'size INTEGER, '
       'url TEXT NOT NULL, '
-      'UNIQUE(image_id, timestamp))')
+      'UNIQUE (image_id, timestamp))')
 
   con.execute(
     'CREATE INDEX IF NOT EXISTS revisions_timestamp ON revisions(timestamp)')

@@ -24,7 +24,7 @@ def init_schema() -> None:
 
 #Get the link status, name and description of all cleanup reasons with respect to a given cleanup
 #action
-def get_reasons_linked_to_action(cleanup_action_name: str) -> tuple[tuple[bool, str, str], ...]:
+def get_reasons_linked_to_action(cleanup_action_name: str) -> list[tuple[bool, str, str]]:
   cursor = db.get().execute(
     'SELECT linked_choices.cleanup_reason_id IS NOT NULL, cleanup_reasons.name, '
     'cleanup_reasons.description FROM cleanup_reasons LEFT JOIN '
@@ -37,7 +37,7 @@ def get_reasons_linked_to_action(cleanup_action_name: str) -> tuple[tuple[bool, 
   return cursor.fetchall()
 
 #Get the names of all cleanup actions linked to a given cleanup reason
-def get_actions_linked_to_reason(cleanup_reason_name: str) -> tuple[str, ...]:
+def get_actions_linked_to_reason(cleanup_reason_name: str) -> list[str]:
   cursor = db.get().execute(
     'SELECT cleanup_action_name FROM cleanup_reasons_actions_view WHERE cleanup_reason_name = ?',
     (cleanup_reason_name,))

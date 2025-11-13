@@ -1,6 +1,5 @@
 #!/usr/bin/env -S sh -c 'cd $(dirname $0); python/bin/python -m $(basename ${0%.py}) $@'
 
-from datetime import datetime
 from argparse import ArgumentParser
 import urllib3
 from modules.common import config
@@ -19,8 +18,8 @@ def refresh_full_image_index(first_time: bool):
   if first_time: print('Creating initial image index...')
   else:          print('Refreshing full image index...')
 
-  query_params = {'action': 'query', 'generator': 'allimages', 'gailimit': 'max',
-                  'prop': 'imageinfo', 'iiprop': 'timestamp|url', 'iilimit': 'max'}
+  query_params = { 'action': 'query', 'generator': 'allimages', 'gailimit': 'max',
+                   'prop': 'imageinfo', 'iiprop': 'timestamp|url', 'iilimit': 'max' }
 
   #Start a full synchronization process for the revisions
   revisions.synchronize_begin()
@@ -83,10 +82,10 @@ def update_image_index(full_index: bool):
 
   print ('Updating image index...')
 
-  query_params = {'action': 'query', 'generator': 'recentchanges', 'grcnamespace': 6,
-                  'grcstart': last_timestamp, 'grcdir': 'newer', 'grclimit': 'max',
-                  'prop': 'imageinfo', 'iiprop': 'timestamp|url', 'iilocalonly': 1,
-                  'iilimit': 'max'}
+  query_params = { 'action': 'query', 'generator': 'recentchanges', 'grcnamespace': 6,
+                   'grcstart': last_timestamp, 'grcdir': 'newer', 'grclimit': 'max',
+                   'prop': 'imageinfo', 'iiprop': 'timestamp|url', 'iilocalonly': 1,
+                   'iilimit': 'max' }
 
   #Start a partial synchronization process for the revisions
   revisions.synchronize_begin()

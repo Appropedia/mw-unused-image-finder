@@ -87,7 +87,7 @@ export function register_submit_listener(form) {
       //If something goes wrong, check the server response body and show an error message
       const response_msg = document.getElementById('response_msg');
 
-      const error_params = response_text.split(',')
+      const error_params = response_text.split(',');
       switch (error_params[0]) {
         case 'MISSING_FIELD':
           response_msg.style.color = 'red';

@@ -41,7 +41,7 @@ def read_description(name: str) -> str | None:
   return None if row is None else row[0]
 
 #Read all cleanup reasons and descriptions
-def read_all() -> tuple[tuple[str, str], ...]:
+def read_all() -> list[tuple[str, str]]:
   return db.get().execute('SELECT name, description FROM cleanup_reasons').fetchall()
 
 #Update the name and description of a cleanup reason

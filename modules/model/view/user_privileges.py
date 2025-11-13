@@ -10,7 +10,7 @@ def init_schema() -> None:
     'INNER JOIN privileges ON users.id = privileges.user_id')
 
 #Get the user names of any previously registered administrator accounts
-def get_administrator_names() -> tuple[str, ...]:
+def get_administrator_names() -> list[str]:
   cursor = db.get().execute(
     'SELECT user_name FROM user_privileges_view WHERE privilege_name = "admin"')
   cursor.row_factory = lambda cur, row: row[0]

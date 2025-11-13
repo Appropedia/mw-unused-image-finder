@@ -31,7 +31,7 @@
     #}
     {% if col is boolean %}
         <span style="color: {{'green' if col else 'red'}};">
-          {{'&check;'|safe if col else '&cross;'|safe}}
+          {{'&check;' | safe if col else '&cross;' | safe}}
         </span>
     {% else %}
           {{col}}
@@ -71,8 +71,8 @@
         </form>
         <script type="module">
           import { register_edit_listener, register_submit_listener }
-          from '{{url_for('static', filename = 'editable_table.js')}}';
-          register_edit_listener({{loop.index0}}, {{row|length}});
+          from {{url_for('static', filename = 'editable_table.js') | tojson}};
+          register_edit_listener({{loop.index0 | tojson}}, {{row | length}});
           register_submit_listener(document.getElementById('row_{{loop.index0}}_update_form'));
         </script>
   {% endif %}
@@ -86,11 +86,12 @@
         </form>
         <script type="module">
           import { register_submit_listener }
-          from '{{url_for('static', filename = 'editable_table.js')}}';
+          from {{url_for('static', filename = 'editable_table.js') | tojson}};
           register_submit_listener(document.getElementById('row_{{loop.index0}}_delete_form'));
         </script>
   {% endif %}
-  {% if reordering and data|length > 1 and ('limit' not in reordering or reordering['limit'] > 1) %}
+  {% if reordering and data | length > 1 and
+     ('limit' not in reordering or reordering['limit'] > 1) %}
     {#
       If reordering is allowed, the table is long enough (2+ rows), and a reordering limit is either
       not set or gives enough room (2+ reorderable rows) then create a reorder form and register a
@@ -116,7 +117,7 @@
         </form>
         <script type="module">
           import { register_submit_listener }
-          from '{{url_for('static', filename = 'editable_table.js')}}';
+          from {{url_for('static', filename = 'editable_table.js') | tojson}};
           register_submit_listener(document.getElementById('row_{{loop.index0}}_reorder_form'));
         </script>
   {% endif %}
@@ -145,7 +146,7 @@
       </form>
       <script type="module">
         import { register_submit_listener }
-        from '{{url_for('static', filename = 'editable_table.js')}}';
+        from {{url_for('static', filename = 'editable_table.js') | tojson}};
         register_submit_listener(document.getElementById('new_row'));
       </script>
     </td>

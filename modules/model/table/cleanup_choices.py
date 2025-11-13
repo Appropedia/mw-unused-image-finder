@@ -22,7 +22,7 @@ def init_schema() -> None:
       'cleanup_action_id INTEGER NOT NULL REFERENCES cleanup_actions(id) ON DELETE CASCADE, '
       'cleanup_reason_id INTEGER NOT NULL REFERENCES cleanup_reasons(id) ON DELETE CASCADE, '
       'position INTEGER NOT NULL, '
-      'UNIQUE(cleanup_action_id, cleanup_reason_id))')
+      'UNIQUE (cleanup_action_id, cleanup_reason_id))')
 
 #Create a new action/reason link, putting it at the last position of its action group
 def create(cleanup_action_id: int, cleanup_reason_id: int) -> Status:
