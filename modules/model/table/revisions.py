@@ -18,6 +18,13 @@ def init_schema() -> None:
   con.execute(
     'CREATE INDEX IF NOT EXISTS revisions_timestamp ON revisions(timestamp)')
 
+#Read the id of a revision given its image id and timestamp
+def read_id(image_id: int, timestamp: str) -> int | None:
+  row = db.get().execute(
+    'SELECT id FROM revisions WHERE image_id = ? AND timestamp = ?',
+    (image_id, timestamp)).fetchone()
+  return None if row is None else row[0]
+
 #Obtain the latest timestamp in the table, if any
 def read_last_timestamp() -> str | None:
   row = db.get().execute(

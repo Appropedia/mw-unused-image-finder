@@ -12,15 +12,20 @@ def init_schema() -> None:
 def create_read_id(title: str) -> int:
   con = db.get()
 
-  row = con.execute('SELECT id FROM images WHERE title = ?', (title,)).fetchone()
-  if row is not None:
-    return row[0]
+  id_ = read_id(title)
+  if id_ is not None:
+    return id_
 
   with con:
     row = con.execute(
       'INSERT INTO images (title) VALUES (?) RETURNING id', (title,)).fetchone()
 
   return row[0]
+
+#Read the id of an image given its title
+def read_id(title: str) -> int | None:
+  row = db.get().execute('SELECT id FROM images WHERE title = ?', (title,)).fetchone()
+  return None if row is None else row[0]
 
 #Read the title of an image given its id
 def read_title(id_: int) -> str | None:

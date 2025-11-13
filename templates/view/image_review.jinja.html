@@ -5,7 +5,7 @@
     <title> Review - {{image['title']}} </title>
     <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
     <link rel="stylesheet" type="text/css"
-          href="{{url_for('static', filename = 'image_review.css')}}">
+     href="{{url_for('static', filename = 'image_review.css')}}">
   </head>
   <body>
     <div class="global_container">
@@ -16,7 +16,7 @@
 {% endfilter %}
       </div>
 
-      <h1><a id='wiki_link' target="_blank">{{image['title']}}</a></h1>
+      <h1><a id="wiki_link" target="_blank">{{image['title']}}</a></h1>
 
       <div class="panel_container">
         <div class="panel">
@@ -43,16 +43,16 @@
 
             <script type="module">
               import { format_local_datetime, format_storage_units }
-              from '{{url_for('static', filename = 'format_utils.js')}}';
+              from {{url_for('static', filename = 'format_utils.js') | tojson}};
 
               document.getElementById('last_modification').textContent =
-                format_local_datetime('{{image['last_modification']}}');
+                format_local_datetime({{image['last_modification'] | tojson}});
 
               document.getElementById('all_revs_size').textContent =
-                format_storage_units({{image['all_revs_size']}});
+                format_storage_units({{image['all_revs_size'] | tojson}});
 
               document.getElementById('max_rev_size').textContent =
-                format_storage_units({{image['max_rev_size']}});
+                format_storage_units({{image['max_rev_size'] | tojson}});
             </script>
           </div>
           <div class="revision_section">
@@ -61,7 +61,8 @@
             </div>
           </div>
           <div>
-            <form id="review_form">
+            <form id="review_form"
+             action="{{url_for('image_review.handle_review', image_title = image['title'])}}">
               <div>
                 <label for="comments">Comments:</label>
               </div>
@@ -87,34 +88,6 @@
 {% endif %}
               </div>
             </form>
-            <script type="module">
-              import { set_text_and_fadeout }
-              from '{{url_for('static', filename = 'simple_effects.js')}}';
-
-              const form = document.getElementById('review_form');
-              const form_submit_result = document.getElementById('form_submit_result');
-
-              form.addEventListener('submit', async (event) => {
-                //This form will be sent with the PUT method, so prevent default handling
-                event.preventDefault();
-
-                //Gather the form data before sending
-                const form_data = new FormData(form);
-
-                //Send the form now
-                const response = await fetch(
-                  '{{url_for('image_review.view', image_title = image['title'])}}',
-                  { method: 'PUT', body: form_data });
-
-                //Briefly show the form response from the server
-                set_text_and_fadeout(form_submit_result,
-                                      response.ok?
-                                        await response.text():
-                                        `${response.status}: ${response.statusText}`,
-                                      1000,
-                                      500);
-              });
-            </script>
           </div>
         </div>
       </div>
@@ -122,180 +95,36 @@
 
     <script type="module">
       import { format_local_datetime, format_storage_units }
-      from '{{url_for('static', filename = 'format_utils.js')}}';
-      import { query_image_info, query_similar_images }
-      from '{{url_for('static', filename = 'image_review.js')}}';
+      from {{url_for('static', filename = 'format_utils.js') | tojson}};
+      import {
+        query_image_info, query_multiple_images, select_image, download_revision_data,
+        download_similar_image_data, register_review_submit_listener
+      } from {{url_for('static', filename = 'image_review.js') | tojson}};
 
-      const wiki_link = document.getElementById('wiki_link');
-      const current_image = document.getElementById('current_image');
-      const revision_size = document.getElementById('revision_size');
-      const revision_dimensions = document.getElementById('revision_dimensions');
-      const revision_time = document.getElementById('revision_time');
-      const similar_img_strip = document.getElementById('similar_img_strip');
-      const revision_strip = document.getElementById('revision_strip');
+      const api_url = {{api_url | tojson}};
 
-      const similar_images = {{similar_images|tojson}};
-      const similar_img_strip_items = {};
-      let revisions = [];
-      let selected_image = 0;
+      const image_title = {{image['title'] | tojson}};
 
-      //Updates the display status of items in the similar image strip
-      function display_similar_images(ref_timestamp, enable) {
-        //Don't update if the reference revision has no similar images (or have not been loaded yet)
-        if (ref_timestamp in similar_img_strip_items) {
-          for (const strip_item of similar_img_strip_items[ref_timestamp]) {
-            if (enable) strip_item.style.display = '';
-            else        strip_item.style.display = 'none';
-          }
-        }
-      }
+      const cleanup_actions = {{cleanup_actions | tojson(indent = 2) | indent(6)}};
 
-      //Select a new image from the revisions strip and update accordingly
-      function select_image(new_image) {
-        //Make sure revisions are loaded before proceeding
-        if (new_image in revisions) {
-          //Set the current image to the selected revision and update revision information
-          current_image.src = revisions[new_image].url;
-          revision_size.textContent = format_storage_units(revisions[new_image].size);
-          revision_dimensions.textContent = revisions[new_image].dimensions;
-          revision_time.textContent = format_local_datetime(revisions[new_image].timestamp);
+      const review_data = {{review_data | tojson(indent = 2) | indent(6)}};
 
-          //Pass the selection status (subclass) to the new selected image
-          revision_strip.children[selected_image].children[0].classList.remove('selected');
-          revision_strip.children[new_image].children[0].classList.add('selected');
+      const similar_images = {{similar_images | tojson(indent = 2) | indent(6)}};
 
-          display_similar_images(revisions[selected_image].timestamp, false);
-          display_similar_images(revisions[new_image].timestamp, true);
-        }
+      const state = {
+        similar_img_strip_items: {},
+        revisions: [],
+        selected_image: 0,
+      };
 
-        selected_image = new_image;
-      }
+      //Register the submit event listener for the review form
+      register_review_submit_listener(state);
 
-      //Check whether a revision is defined in the similar images (si) object
-      function revision_in_similar_images(ref_timestamp, si_title, si_timestamp) {
-        return si_title in similar_images[ref_timestamp] &&
-               similar_images[ref_timestamp][si_title].revisions.includes(si_timestamp);
-      }
+      //Aynchronously update the revision information
+      download_revision_data(api_url, state, image_title, cleanup_actions, review_data);
 
-      //This asynchronous process queries the wiki for information about the current image and
-      //updates the document when completed
-      (async () => {
-        const image_info = await query_image_info('{{api_url}}', '{{image['title']}}');
-
-        //Set the wiki link URL and get the revisions
-        wiki_link.href = image_info.descriptionurl;
-        revisions = image_info.revisions;
-
-        for (let index = 0; index < revisions.length; index++) {
-          //Create a new item in the thumbnail strip
-          const rev_strip_item = revision_strip.appendChild(document.createElement('div'));
-          rev_strip_item.classList.add('revision');
-          rev_strip_item.innerHTML = `
-            <div class="revision_thumbnail" id="revision_img_div_${index}">
-              <img id="revision_img_${index}">
-            </div>
-            <div class="revision_form">
-              <div>
-                <label for="action_${index}"> Action: </label>
-                <select id="action_${index}" form="review_form" name="action_${index}"></select>
-              </div>
-              <div>
-                <label for="reason_${index}"> Reason: </label>
-                <select id="reason_${index}" form="review_form" name="reason_${index}"></select>
-              </div>
-            </div>
-          `;
-
-          //Set the source to the revision thumbnail
-          const img = document.getElementById(`revision_img_${index}`);
-          img.src = revisions[index].thumburl;
-
-          //Add a click event listener to the selectable thumbnail container
-          const img_container = document.getElementById(`revision_img_div_${index}`);
-          img_container.addEventListener('click', () => { select_image(index); });
-
-          //Add options for testing purposes
-          const form_action = document.getElementById(`action_${index}`);
-          const test_action = new Option('Example action', 'example_action', true);
-          test_action.title = 'Test tooltip for example action';
-          form_action.add(test_action);
-
-          const form_reason = document.getElementById(`reason_${index}`);
-          const test_reason = new Option('Example reason', 'example_reason', true);
-          test_reason.title = 'Test tooltip for example reason';
-          form_reason.add(test_reason);
-        }
-
-        select_image(selected_image);  //Refresh the selected image
-      })();
-
-      //This asynchronous process queries the wiki for information about images similar to the
-      //current one and updates the document when completed
-      (async () => {
-        //Retrieve all unique titles from the similar_images object
-        const similar_image_titles = [];
-        for (const image of Object.values(similar_images)) {
-          for (const title in image) {
-            if (!similar_image_titles.includes(title)) {
-              similar_image_titles.push(title);
-            }
-          }
-        }
-
-        //Avoid querying for information if there's no similar images
-        if (similar_image_titles.length == 0)
-          return;
-
-        //Query for information on similar images
-        const similar_image_info = await query_similar_images('{{api_url}}', similar_image_titles);
-
-        //Iterate over the similar image (si) information provided by the wiki
-        for (const si_title in similar_image_info) {
-          for (const si_timestamp in similar_image_info[si_title]) {
-            //Cross the data provided by the wiki against the data provided by the application
-            //server. If both provide matching information about an specific revision, mark it as
-            //referenced.
-            let revision_referenced = false;
-            for (const ref_timestamp in similar_images) {
-              if (revision_in_similar_images(ref_timestamp, si_title, si_timestamp))
-              {
-                revision_referenced = true;
-                break;
-              }
-            }
-
-            if (revision_referenced) {
-              //Add a new thumbnail to the similar image strip using information provided by the
-              //wiki. Make it initially invisible until a related revision is selected.
-              const img_container = similar_img_strip.appendChild(document.createElement('div'));
-              img_container.classList.add('similar_image');
-              img_container.style.display = 'none';
-
-              const anchor = img_container.appendChild(document.createElement('a'));
-              anchor.href = similar_image_info[si_title][si_timestamp].descriptionurl;
-              anchor.target = '_blank';
-
-              const img = anchor.appendChild(document.createElement('img'));
-              img.src = similar_image_info[si_title][si_timestamp].thumburl;
-
-              //Cross the data again. For each revision that is referenced by both sides, add a
-              //reference of the newly created item to the similar_img_strip_items object.
-              for (const ref_timestamp in similar_images) {
-                if (!revision_in_similar_images(ref_timestamp, si_title, si_timestamp))
-                  continue;
-
-                //Create the array for the reference timestamp only once
-                if (!(ref_timestamp in similar_img_strip_items))
-                  similar_img_strip_items[ref_timestamp] = [];
-
-                similar_img_strip_items[ref_timestamp].push(img_container);
-              }
-            }
-          }
-        }
-
-        select_image(selected_image);  //Refresh the selected image
-      })();
+      //Asynchronously update the information for similar images as well
+      download_similar_image_data(api_url, state, similar_images);
     </script>
   </body>
 </html>
