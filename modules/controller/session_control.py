@@ -60,7 +60,7 @@ def check(request_endpoint, route_handler: Callable):
     return redirect(url_for('session_control.login'))
 
   #User is logged in, store user information in the global context
-  g.user_id, g.user_status = users.read(session['user_name'])
+  g.user_id, g.user_status = users.read_id_status(session['user_name'])
 
   if g.user_status is None or g.user_status == 'banned':
     #Invalid or banned account, drop the session immediately

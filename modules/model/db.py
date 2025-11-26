@@ -59,3 +59,8 @@ def go_without_flask() -> None:
   _con = _new_conection()       #Keep connection at module level, instead of application context
   get = lambda: _con            #Override get()
   close = lambda: _con.close()  #Override close()
+
+#Open a direct connection to the database independently of any request context (the caller is
+#responsible for calling the close method on the connnection once finished)
+def contextless_get() -> sqlite3.Connection:
+  return _new_conection()

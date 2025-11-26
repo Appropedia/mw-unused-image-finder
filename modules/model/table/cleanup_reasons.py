@@ -40,8 +40,14 @@ def read_description(name: str) -> str | None:
     'SELECT description FROM cleanup_reasons WHERE name = ?', (name,)).fetchone()
   return None if row is None else row[0]
 
-#Read all cleanup reasons and descriptions
-def read_all() -> list[tuple[str, str]]:
+#Read all cleanup reason names
+def read_name_all() -> list[str]:
+  cursor = db.get().execute('SELECT name FROM cleanup_reasons')
+  cursor.row_factory = lambda cur, row: row[0]
+  return cursor.fetchall()
+
+#Read all cleanup reason names and descriptions
+def read_name_description_all() -> list[tuple[str, str]]:
   return db.get().execute('SELECT name, description FROM cleanup_reasons').fetchall()
 
 #Update the name and description of a cleanup reason

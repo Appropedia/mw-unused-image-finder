@@ -70,7 +70,7 @@
                 <textarea id="comments" name="comments" maxlength=256 rows=5
                   style="resize: none; width: 100%; box-sizing: border-box;"
                   placeholder="Enter your comments here in case you find an special case"
-                  ></textarea>
+                  >{{review_data['comments']}}</textarea>
               </div>
               <div style="display: flex; justify-content: space-between">
                 <div>
@@ -94,12 +94,9 @@
     </div>
 
     <script type="module">
-      import { format_local_datetime, format_storage_units }
-      from {{url_for('static', filename = 'format_utils.js') | tojson}};
       import {
-        query_image_info, query_multiple_images, select_image, download_revision_data,
-        download_similar_image_data, register_review_submit_listener
-      } from {{url_for('static', filename = 'image_review.js') | tojson}};
+        download_revision_data, download_similar_image_data, register_review_submit_listener }
+      from {{url_for('static', filename = 'image_review.js') | tojson}};
 
       const api_url = {{api_url | tojson}};
 
@@ -107,7 +104,7 @@
 
       const cleanup_actions = {{cleanup_actions | tojson(indent = 2) | indent(6)}};
 
-      const review_data = {{review_data | tojson(indent = 2) | indent(6)}};
+      const cleanup_proposal = {{review_data.cleanup_proposal | tojson(indent = 2) | indent(6)}};
 
       const similar_images = {{similar_images | tojson(indent = 2) | indent(6)}};
 
@@ -117,14 +114,14 @@
         selected_image: 0,
       };
 
-      //Register the submit event listener for the review form
-      register_review_submit_listener(state);
-
       //Aynchronously update the revision information
-      download_revision_data(api_url, state, image_title, cleanup_actions, review_data);
+      download_revision_data(api_url, state, image_title, cleanup_actions, cleanup_proposal);
 
       //Asynchronously update the information for similar images as well
       download_similar_image_data(api_url, state, similar_images);
+
+      //Register the submit event listener for the review form
+      register_review_submit_listener(state);
     </script>
   </body>
 </html>

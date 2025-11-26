@@ -76,7 +76,7 @@ def _read_all() -> str:
       'link_url': url_for('cleanup_reason.handle_single', reason = _url_encode(row[0])),
       'form_url': url_for('cleanup_reason.handle_single', reason = _url_encode(row[0])),
       'content': row,
-    } for row in cleanup_reasons.read_all()),
+    } for row in cleanup_reasons.read_name_description_all()),
     'link_field': 'name',
     'allow_create': True,
     'allow_update': True,

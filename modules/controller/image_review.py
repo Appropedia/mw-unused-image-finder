@@ -3,8 +3,8 @@ from werkzeug.exceptions import HTTPException
 from modules.controller import session_control
 from modules.model.table import image_concessions
 from modules.model.view import image_revisions, similar_images
-from modules.model.view import cleanup_action_reason_links, image_revision_reviews
-from modules.model.relation import image_candidates, reviews
+from modules.model.view import cleanup_action_reason_links, review_details
+from modules.model.relation import image_candidates, review_store
 from modules.common import config
 
 blueprint = Blueprint('image_review', __name__)
@@ -15,7 +15,7 @@ COMMENTS_MAX_LEN = 256
 #Register module configurations
 config.register({
   'image_dealer': {
-    'concession_period': 300,   #Images are reserved for every reviewer for 5 minutes
+    'concession_period': 300,   #Images are reserved for every review author for 5 minutes
   },
 })
 
@@ -94,7 +94,7 @@ def _read(image_title) -> str:
   render_params['cleanup_actions'] = cleanup_action_reason_links.get_actions_and_reasons()
 
   #If a review for the image exists already, add its information to the render parameters as well
-  render_params['review_data'] = image_revision_reviews.get(image_id)
+  render_params['review_data'] = review_details.get_single(image_id)
 
   #Get all similar images and add the results to the render parameters
   render_params['similar_images'] = similar_images.search(image_id, 12)
@@ -112,7 +112,7 @@ def _read(image_title) -> str:
 #Process a review write request
 def _update(image_title) -> str:
   _validate_update_args
-  status = reviews.write(image_title, g.user_id, request.json)
+  status = review_store.write(image_title, g.user_id, request.json)
   return _handle_reviews_return_status(status)
 
 #Make sure the update query parameters are valid or abort the request
@@ -152,17 +152,17 @@ def _validate_update_args() -> None:
 
 #Handle the return status of a reviews module call, returning either 200 - 'OK' or a simplified
 #error message accompanied by the corresponding HTTP error code
-def _handle_reviews_return_status(status: reviews.Status) -> str:
+def _handle_reviews_return_status(status: review_store.Status) -> str:
   match status:
-    case reviews.Status.SUCCESS:
+    case review_store.Status.SUCCESS:
       return 'OK'
-    case reviews.Status.NON_EXISTENT_IMAGE:
+    case review_store.Status.NON_EXISTENT_IMAGE:
       abort(404, 'NOT_FOUND,image')
-    case reviews.Status.NON_EXISTEN_REVISION:
+    case review_store.Status.NON_EXISTEN_REVISION:
       abort(404, 'NOT_FOUND,revision')
-    case reviews.Status.NON_EXISTENT_ACTION:
+    case review_store.Status.NON_EXISTENT_ACTION:
       abort(404, 'NOT_FOUND,cleanup_action')
-    case reviews.Status.NON_EXISTENT_REASON:
+    case review_store.Status.NON_EXISTENT_REASON:
       abort(404, 'NOT_FOUND,cleanup_reason')
     case _:
       abort(500, status.name)

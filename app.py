@@ -2,11 +2,11 @@
 
 from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix
-from modules.common import config, app_config
+from modules.common import config, app_config, custom_jinja_filters
 from modules.utility import random_password
 from modules.mediawiki import cors_proxy
 from modules.controller import default, session_control, password_update, image_review
-from modules.controller import cleanup_action, cleanup_reason
+from modules.controller import cleanup_action, cleanup_reason, review_report
 from modules.model import db
 
 #Load the configuration file. Do this only after importing every module so they've had a chance to
@@ -22,6 +22,10 @@ app.register_blueprint(password_update.blueprint)
 app.register_blueprint(image_review.blueprint)
 app.register_blueprint(cleanup_action.blueprint)
 app.register_blueprint(cleanup_reason.blueprint)
+app.register_blueprint(review_report.blueprint)
+
+#Register all custom Jinja filters
+custom_jinja_filters.register(app)
 
 #Load the flask secrey key file
 for retry_count in range(2):

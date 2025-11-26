@@ -1,0 +1,212 @@
+{% set table_header_footer %}
+  {% if offset > 0 %}
+    {% set query_params = dict({ 'limit': limit,
+                                 'offset': offset - limit if offset >= limit else 0 },
+                               **filter_params) %}
+      <a href="?{{query_params | urlencode}}"> Previous {{limit}} </a>
+  {% else %}
+      Previous {{limit}}
+  {% endif %}
+  {% if more_results %}
+    {% set query_params = dict({ 'limit': limit,
+                                 'offset': offset + limit },
+                               **filter_params) %}
+      | <a href="?{{query_params | urlencode}}"> Next {{limit}} </a>
+  {% else %}
+      | Next {{limit}}
+  {% endif %}
+  {% for link_limit in [50,100,250,500] %}
+    {% if link_limit != limit %}
+      {% set query_params = dict({ 'limit': link_limit,
+                                   'offset': offset },
+                                 **filter_params) %}
+      | <a href="?{{query_params | urlencode}}"> {{link_limit}} </a>
+    {% else %}
+      | {{link_limit}}
+    {% endif %}
+  {% endfor %}
+{% endset %}
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> Review report </title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
+    <style>
+      .size_reference {
+        height: 100%;
+      }
+      div.composite_cell {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        justify-content: space-evenly;
+      }
+    </style>
+  </head>
+  <body>
+{% set top_left_link = ['default.view', 'Back to main'] %}
+{% filter indent(width = 4, first = True) %}
+  {% include 'common/top_bar.jinja.html' %}
+{% endfilter %}
+    <h1> Review report </h1>
+    <p>
+      All submitted reviews are listed here
+    </p>
+    <form id="filter_form">
+      Filter by:
+{% set filter_label = {
+  'review_author': '-- Review author --',
+  'cleanup_action': '-- Cleanup action --',
+  'cleanup_reason': '-- Cleanup reason --',
+  'image_title': '-- Image title --',
+} %}
+{% for filter_name, filter_options in available_filters.items() %}
+  {% if filter_options['type'] == 'select' %}
+      <select name="{{filter_name}}">
+    {% set selected = ' selected' if filter_name not in request.args else '' %}
+        <option value=""{{selected}}> {{filter_label[filter_name]}} </option>
+    {% for option in filter_options['options'] %}
+      {% set selected = ' selected' if request.args[filter_name] == option else '' %}
+        <option value="{{option}}"{{selected}}> {{option}} </option>
+    {% endfor %}
+      </select>
+  {% elif filter_options['type'] == 'input' %}
+      <input name="{{filter_name}}" placeholder="{{filter_label[filter_name]}}"
+       value="{{request.args[filter_name]}}">
+  {% endif %}
+{% endfor %}
+      <input type="hidden" name="limit" value="{{limit}}">
+      <button type="send">Apply</button>
+    </form>
+    <script type="module">
+      document.getElementById('filter_form').addEventListener('submit', (event) => {
+        for (const child of event.target.children) {
+          //Remove the name attribute from any select element that has an empty value, this way it
+          //won't be included in the form data
+          if ((child.tagName === 'SELECT' || child.tagName === 'INPUT') && child.value === '') {
+            child.removeAttribute('name');
+          }
+        }
+      });
+    </script>
+{% if reviews | length > 0 %}
+    <div>
+      {{table_header_footer | trim}}
+    </div>
+    <table id="reviews_table" class="size_reference">
+      <tr>
+        <th> No. </th>
+        <th> File </th>
+        <th> Revision </th>
+        <th> Action </th>
+        <th> Reason </th>
+        <th> Comments </th>
+        <th> Last update </th>
+        <th> Author </th>
+        <th> Author update time </th>
+      </tr>
+  {% for r in reviews %}
+      <tr class="size_reference">
+        <td>
+          {{loop.index + offset}}
+        </td>
+        <td>
+          <a href="{{url_for('image_review.handle_review', image_title = r['image_title'])}}">
+            {{r['image_title']}}
+          </a>
+        </td>
+        <td class="size_reference">
+          <div class="composite_cell">
+    {% for proposal in r['cleanup_proposal'] %}
+            <div>
+              {{proposal['timestamp']}}
+            </div>
+    {% endfor %}
+          </div>
+        </td>
+        <td class="size_reference">
+          <div class="composite_cell">
+    {% for proposal in r['cleanup_proposal'] %}
+            <div>
+              {{proposal['action']}}
+            </div>
+    {% endfor %}
+          </div>
+        </td>
+        <td class="size_reference">
+          <div class="composite_cell">
+    {% for proposal in r['cleanup_proposal'] %}
+            <div>
+              {{proposal['reason']}}
+            </div>
+    {% endfor %}
+          </div>
+        </td>
+        <td>
+          {{r['comments'] | new_line_to_break | indent(width = 10)}}
+        </td>
+        <td>
+          {{r['update_time']}}
+        </td>
+        <td class="size_reference">
+          <div class="composite_cell">
+    {% for author in r['authors'] %}
+            <div>
+              {{author['user_name']}}
+            </div>
+    {% endfor %}
+          </div>
+        </td>
+        <td class="size_reference">
+          <div class="composite_cell">
+    {% for author in r['authors'] %}
+            <div>
+              {{author['timestamp']}}
+            </div>
+    {% endfor %}
+          </div>
+        </td>
+      </tr>
+  {% endfor %}
+    </table>
+    <div>
+      {{table_header_footer | trim}}
+    </div>
+    <p>
+      Download the full review data (including all pages) as
+      <a href="{{url_for('review_report.view', format = 'json', **filter_params)}}" download>
+        json
+      </a>
+      or
+      <a href="{{url_for('review_report.view', format = 'csv', **filter_params)}}" download>
+        csv
+      </a>
+    </p>
+{% else %}
+    <p> There are no results </p>
+{% endif %}
+    <script type="module">
+      import { format_local_datetime }
+      from {{url_for('static', filename = 'format_utils.js') | tojson}};
+
+      const reviews_table = document.getElementById('reviews_table');
+
+      //Iterate through all table rows from the second
+      for (const row of Array.from(reviews_table.rows).slice(1)) {
+        //Reformat the dates in the timestamp column of the cleanup proposal
+        for (const timestamp_div of row.cells[2].children[0].children) {
+          timestamp_div.textContent = format_local_datetime(timestamp_div.textContent.trim());
+        }
+
+        //Reformat the dates in the update_time column
+        row.cells[6].textContent = format_local_datetime(row.cells[6].textContent.trim());
+
+        //Reformat the dates in the timestamp column of the authors
+        for (const timestamp_div of row.cells[8].children[0].children) {
+          timestamp_div.textContent = format_local_datetime(timestamp_div.textContent.trim());
+        }
+      }
+    </script>
+  </body>
+</html>

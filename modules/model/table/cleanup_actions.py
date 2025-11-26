@@ -50,8 +50,14 @@ def read_description(name: str) -> str | None:
     'SELECT description FROM cleanup_actions WHERE name = ?', (name,)).fetchone()
   return None if row is None else row[0]
 
-#Read all cleanup actions and descriptions
-def read_all() -> list[tuple[str, str]]:
+#Read all cleanup action names
+def read_name_all() -> list[str]:
+  cursor = db.get().execute('SELECT name FROM cleanup_actions ORDER BY position ASC')
+  cursor.row_factory = lambda cur, row: row[0]
+  return cursor.fetchall()
+
+#Read all cleanup action names and descriptions
+def read_name_description_all() -> list[tuple[str, str]]:
   return db.get().execute(
     'SELECT name, description FROM cleanup_actions ORDER BY position ASC').fetchall()
 

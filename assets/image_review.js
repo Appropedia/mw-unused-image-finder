@@ -41,7 +41,7 @@ async function query_file_info(api_url, image_title) {
 }
 
 //Query the wiki for information on a file, assuming it's an image
-export async function query_image_info(api_url, image_title) {
+async function query_image_info(api_url, image_title) {
   //Query parameters for obtaining image information
   const params = new URLSearchParams({
     'action': 'query',
@@ -93,7 +93,7 @@ export async function query_image_info(api_url, image_title) {
 }
 
 //Query the wiki for information on multiple files
-export async function query_multiple_images(api_url, image_titles) {
+async function query_multiple_images(api_url, image_titles) {
   //Query parameters for obtaining image information
   const params = new URLSearchParams({
     'action': 'query',
@@ -140,7 +140,7 @@ function update_similar_images(state, ref_timestamp, enable) {
 }
 
 //Select an image from the revisions strip and update the DOM accordingly
-export function select_image(state, new_index = state.selected_image) {
+function select_image(state, new_index = state.selected_image) {
   const current_image = document.getElementById('current_image');
   const revision_size = document.getElementById('revision_size');
   const revision_dimensions = document.getElementById('revision_dimensions');
@@ -201,7 +201,7 @@ function populate_select_element(select_element, options, selected_option) {
 
 //Query the wiki for information about the current image and update the DOM when completed
 export async function download_revision_data(api_url, state, image_title, cleanup_actions,
-                                             review_data)
+                                             cleanup_proposal)
 {
   const wiki_link = document.getElementById('wiki_link');
   const revision_strip = document.getElementById('revision_strip');
@@ -249,10 +249,10 @@ export async function download_revision_data(api_url, state, image_title, cleanu
     const timestamp = state.revisions[index].timestamp;
 
     //Attempt to load the stored review data, if available
-    if (timestamp in review_data) {
+    if (timestamp in cleanup_proposal) {
       //There's a review stored for this revision, get the currently stored action and reason
-      const stored_action = review_data[timestamp].cleanup_action_name;
-      const stored_reason = review_data[timestamp].cleanup_reason_name;
+      const stored_action = cleanup_proposal[timestamp].cleanup_action_name;
+      const stored_reason = cleanup_proposal[timestamp].cleanup_reason_name;
 
       if (cleanup_actions.some(a => a.name === stored_action)) {
         //The stored action is still valid, populate the action select element with a default

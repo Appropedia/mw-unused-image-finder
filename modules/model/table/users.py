@@ -23,10 +23,16 @@ def create(name: str, password: str, status: str) -> int | None:
   return None if row is None else row[0]
 
 #Read the id and status of a given user
-def read(name: str) -> tuple[int, str] | tuple[None, None]:
+def read_id_status(name: str) -> tuple[int, str] | tuple[None, None]:
   row = db.get().execute('SELECT id, status FROM users WHERE name = ?', (name,)).fetchone()
 
   return (None,) * 2 if row is None else row
+
+#Read the names of all users
+def read_name_all() -> list[str]:
+  cursor = db.get().execute('SELECT name FROM users')
+  cursor.row_factory = lambda cur, row: row[0]
+  return cursor.fetchall()
 
 #Check for user name availability
 def name_available(name: str) -> bool:

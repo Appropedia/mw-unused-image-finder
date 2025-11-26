@@ -1,7 +1,8 @@
 import enum
+from datetime import datetime
 from modules.model import db
 from modules.model.table import images, revisions, cleanup_actions, cleanup_reasons
-from modules.model.table import image_reviews, reviewers, revision_reviews
+from modules.model.table import image_reviews, review_authors, revision_reviews
 
 #Enumeration of operation results
 class Status(enum.Enum):
@@ -46,11 +47,12 @@ def write(image_title: str, user_id: int, form_data: dict[str, str | dict[str, s
         'cleanup_reason_id': cleanup_reason_id,
       })
 
-    #Write the image review, register the current reviewer and write every revision review to the
-    #database
+    #Write the image review, register the current review author and write every revision review to
+    #the database
     try:
-      image_reviews.write(con, image_id, user_id, form_data['comments'])
-      reviewers.write(con, image_id, user_id);
+      current_time = datetime.now()
+      image_reviews.write(con, image_id, current_time, form_data['comments'])
+      review_authors.write(con, image_id, user_id, current_time);
       for data in revision_review_data:
         revision_reviews.write(con, data['revision_id'], image_id,
                                data['cleanup_action_id'], data['cleanup_reason_id'])
