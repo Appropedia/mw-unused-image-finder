@@ -90,6 +90,8 @@ def _read(image_title) -> str:
   render_params['image']['total_revisions']\
     = image_revisions.get_image_summary(image_title)
 
+  if image_id is None: abort(404)
+
   #Add all available cleanup actions and reasons to the render parameters
   render_params['cleanup_actions'] = cleanup_action_reason_links.get_actions_and_reasons()
 

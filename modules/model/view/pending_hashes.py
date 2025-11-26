@@ -18,8 +18,11 @@ def total() -> int:
 def get() -> Iterator[tuple[int, str]]:
   con = db.get()
 
+  last_id = -1
   while True:
     row = con.execute(
-      'SELECT revision_id, revision_url FROM pending_hashes_view LIMIT 1').fetchone()
+      'SELECT revision_id, revision_url FROM pending_hashes_view WHERE revision_id > ? '
+      'ORDER BY revision_id LIMIT 1', (last_id,)).fetchone()
     if row is None: break
     yield row
+    last_id = row[0]
