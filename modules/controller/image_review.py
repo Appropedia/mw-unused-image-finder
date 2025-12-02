@@ -101,6 +101,12 @@ def _read(image_title) -> str:
   #Get all similar images and add the results to the render parameters
   render_params['similar_images'] = similar_images.search(image_id, 12)
 
+  #Add links for reviewing similar images directly
+  for ref_timestamp in render_params['similar_images']:
+    for title in render_params['similar_images'][ref_timestamp]:
+      render_params['similar_images'][ref_timestamp][title]['review_url'] = \
+        url_for('image_review.handle_review', image_title = title, category = category)
+
   #Write the concession so other users get other images during the concession period
   image_concessions.write(g.user_id, image_id)
 

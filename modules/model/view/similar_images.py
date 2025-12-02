@@ -1,6 +1,6 @@
 from modules.model import db
 from modules.model.table import hashes, unused_images
-from modules.model.view import image_revisions
+from modules.model.view import image_revisions, review_details
 
 _hash_fields = ', '.join(f'H{i}' for i in range(8))
 
@@ -66,6 +66,7 @@ def search(ref_image_id: int, max_dist: int) -> dict[str, dict[str, dict[str, bo
       if match_image_title not in result[ref_revision_timestamp]:
         result[ref_revision_timestamp][match_image_title] = {
           'unused': unused_images.exists(match_image_title),
+          'reviewed': review_details.exists(match_image_title),
           'revisions': [],
         }
 

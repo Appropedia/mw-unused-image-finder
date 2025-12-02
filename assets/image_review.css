@@ -6,11 +6,18 @@ div.global_container {
   max-height: min-content;  /* Grow to minimum height of content if space is insufficient */
 }
 
+/* Container for the title bar */
+div.global_container div.title_bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
 /* Container for page panels that divide the viewport vertically */
 div.global_container div.panel_container {
   flex-grow: 1;
   display: grid;
-  grid-template-columns: 60% auto;
+  grid-template-columns: 50% auto;
   gap: 2px;                   /* Create grid lines by setting background color, gaps and padding */
   padding: 2px;
   background-color: #000000;
@@ -23,7 +30,7 @@ div.panel_container div.panel {
   gap: 2px;
 }
 
-/* Common properties for all divs inside panels */
+/* Common properties for all divs directly inside panels */
 div.panel > div {
   padding: 0.25em;
   background-color: #FFFFFF;  /* Background color for all small panels*/
@@ -52,8 +59,13 @@ div.panel div.similar_image_strip {
   min-height: 140px;  /* 120px maximum thumbnail height + 10px for padding on top and bottom */
 }
 
+/* Container for similar image thumbnails and links */
+div.similar_image_strip div.similar_image_strip_item {
+  margin-bottom: 10px;   /* Mitigate firefox's horizontal scroll bars obstructing links */
+}
+
 /* Container for similar image thumbnails */
-div.similar_image_strip div.similar_image {
+div.similar_image_strip_item div.similar_image {
   display: grid;        /* Create a 1x1 grid with padding to separate thumbnails */
   place-items: center;
   padding: 10px;
@@ -63,9 +75,19 @@ div.similar_image_strip div.similar_image {
   max-height: 120px;
 }
 
-/* Similar image thumbnail */
-div.similar_image img {
-  display: block;   /* Prevent hyperlink anchor to add unnecessary height */
+/* Container for the titles of the similar images */
+div.similar_image_strip_item div.similar_image_title {
+  width: 130px;             /* Allow for room between text fragments */
+  white-space: nowrap;      /* Cause all text to be trimmed with ellipsis if it doesn't fit */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Container for the options common to all revision reviews */
+div.panel div.common_options {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5em;
 }
 
 /* Container for the revision section */
@@ -86,6 +108,7 @@ div.revision_section div.revision_strip {
 /* Container for revision thumbnails and forms */
 div.revision_strip div.revision {
   display: flex;
+  gap: 0.5em;
 }
 
 /* Container for revision thumbnails */
@@ -109,33 +132,10 @@ div.revision_thumbnail:not(.selected):hover {
   background-color: #6090C0;
 }
 
-/* Container for revision forms */
-div.revision div.revision_form {
+/* Container for revision forms and detailed information */
+div.revision div.revision_form,
+div.revision div.revision_details {
   display: flex;
   flex-direction: column;
   justify-content: center;
-}
-
-/* Adjustments for mobile screens */
-@media (max-width: 1000px) {
-  /* Change the global container to the default div type (block) so height is calculated
-     automatically, allowing for vertical scrolling if needed */
-  div.global_container {
-    display: initial;
-  }
-
-  /* Reduce the amount of columns to 1 */
-  div.global_container div.panel_container {
-    grid-template-columns: 100%;
-  }
-
-  /* Force an aspect ratio on the current image div, so that it's height doesn't become too large */
-  div.panel div.current_img {
-    flex: initial;
-    aspect-ratio: 2 / 1;
-  }
-
-  div.revision_section div.revision_strip {
-    flex: initial;
-  }
 }

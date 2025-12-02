@@ -44,6 +44,12 @@ def init_schema() -> None:
     'LEFT JOIN cleanup_actions ON revision_reviews.cleanup_action_id = cleanup_actions.id '
     'LEFT JOIN cleanup_reasons ON revision_reviews.cleanup_reason_id = cleanup_reasons.id')
 
+#Check whether an image has been reviewed yet
+def exists(image_title: str) -> bool:
+  return bool(db.get().execute(
+    'SELECT EXISTS (SELECT 1 FROM review_filter_view WHERE image_title = ?)',
+    (image_title,)).fetchone()[0])
+
 #Get all information stored for a given given image review
 def get_single(image_id: int) -> dict[str, str | dict[str, dict[str, str]]]:
   con = db.get()

@@ -1,6 +1,7 @@
 import { do_api_query } from './mediawiki_api_client.js';
 import { format_local_datetime, format_storage_units } from './format_utils.js';
 import { set_text_and_fadeout } from './simple_effects.js';
+import { color_map } from './math_utils.js';
 
 //Functions for querying and processing data from the wiki
 //--------------------------------------------------------------------------------------------------
@@ -128,32 +129,38 @@ async function query_multiple_images(api_url, image_titles) {
 //Functions for managing and updating DOM elements
 //--------------------------------------------------------------------------------------------------
 
-//Updates the display status of items in the similar image strip
+//Updates the display status of elements in the similar image strip and returns their count
 function update_similar_images(state, ref_timestamp, enable) {
-  //Don't update if the reference revision has no similar images (or have not been loaded yet)
-  if (ref_timestamp in state.similar_img_strip_items) {
-    for (const strip_item of state.similar_img_strip_items[ref_timestamp]) {
-      if (enable) strip_item.style.display = '';
-      else        strip_item.style.display = 'none';
+  if (ref_timestamp in state.similar_img_strip_elements) {
+    //Only update if the reference revision is in the similar image strip elements, which means that
+    //the similar image data has been loaded
+    let modified_element_count = 0;
+
+    for (const strip_element of state.similar_img_strip_elements[ref_timestamp]) {
+      if (enable) strip_element.style.display = '';
+      else        strip_element.style.display = 'none';
+      modified_element_count++;
     }
+
+    return modified_element_count;
+  }
+  else {
+    //The similar image data has not been loaded yet, so the amount of elements that should be
+    //modified cannot be determined
+    return undefined;
   }
 }
 
 //Select an image from the revisions strip and update the DOM accordingly
 function select_image(state, new_index = state.selected_image) {
   const current_image = document.getElementById('current_image');
-  const revision_size = document.getElementById('revision_size');
-  const revision_dimensions = document.getElementById('revision_dimensions');
-  const revision_time = document.getElementById('revision_time');
   const revision_strip = document.getElementById('revision_strip');
+  const similar_image_strip_label = document.getElementById('similar_image_strip_label');
 
   //Make sure revisions are loaded before proceeding
   if (new_index in state.revisions) {
-    //Set the current image to the selected revision and update revision information
+    //Set the current image to the selected revision
     current_image.src = state.revisions[new_index].url;
-    revision_size.textContent = format_storage_units(state.revisions[new_index].size);
-    revision_dimensions.textContent = state.revisions[new_index].dimensions;
-    revision_time.textContent = format_local_datetime(state.revisions[new_index].timestamp);
 
     //Pass the selection status (subclass) to the new selected image
     revision_strip.children[state.selected_image].children[0].classList.remove('selected');
@@ -161,23 +168,33 @@ function select_image(state, new_index = state.selected_image) {
 
     //Update the similar image strip to show images for the now selected revision
     update_similar_images(state, state.revisions[state.selected_image].timestamp, false);
-    update_similar_images(state, state.revisions[new_index].timestamp, true);
+    const similar_image_count = update_similar_images(state, state.revisions[new_index].timestamp,
+                                                      true);
+
+    //Update the similar image count
+    if (similar_image_count === 0)
+      similar_image_strip_label.textContent = 'No similar images';
+    else if (similar_image_count === 1)
+      similar_image_strip_label.textContent = '1 possibly similar image:';
+    else if (Number.isInteger(similar_image_count))
+      similar_image_strip_label.textContent = `${similar_image_count} possibly similar images:`;
 
     state.selected_image = new_index;
   }
 }
 
-//Populate a select element with options and pre-select a default option if given
+//Populate a select element with options and preselect a default option if given
 //Parameters:
 // - select_element: The select element to populate
 // - options: An array of ojects, with a "name" field that is used as the text and value of each
 //   option and a "description" field that is used as the title (tooltip)
-// - selected_option: One of the following:
-//   - null: Specifically require no option to be pre-selected (always select the guidance option)
-//   - undefined: Don't pre-select any particular option, but allow to automatically pre-select an
+// - preselected_option: One of the following:
+//   - null: Specifically require no option to be preselected (always select the guidance option)
+//   - empty string: Same as null
+//   - undefined: Don't preselect any particular option, but allow to automatically preselect an
 //     option if exactly one is given (otherwise select the guidance option)
-//   - An string with the text/value of the pre-selected option
-function populate_select_element(select_element, options, selected_option) {
+//   - An string with the text/value of the preselected option
+function populate_select_element(select_element, options, preselected_option) {
   //Abort if there are no options
   if (options.length === 0) {
     return;
@@ -186,17 +203,99 @@ function populate_select_element(select_element, options, selected_option) {
   //Add a default disabled guidance option
   const default_option = new Option('-- Select an option --', '');
   default_option.disabled = true;
-  default_option.selected = selected_option === null ||
-                            selected_option === undefined && options.length > 1;
+  default_option.selected = preselected_option === null ||
+                            preselected_option === '' ||
+                            preselected_option === undefined && options.length > 1;
   select_element.add(default_option);
 
   //Add the given options
   for (const o of options) {
     const option_element = new Option(o.name, o.name);
     option_element.title = o.description;
-    option_element.selected = o.name === selected_option;
+    option_element.selected = o.name === preselected_option;
     select_element.add(option_element);
   }
+}
+
+//Populate or repopulate a select element with the reasons associated to a given action
+function refresh_reasons_select_element(reason_select, cleanup_actions, action_name,
+                                        preselected_option)
+{
+  //Start by clearing the reason select element in case it has any registered option
+  reason_select.options.length = 0;
+
+  //Locate the matching action descriptor object in the array
+  const action = cleanup_actions.find(a => a.name === action_name);
+
+  //If the action name is not valid, return with an unpopulated reason select element
+  if (action === undefined)
+    return;
+
+  //Repopulate the reason select element with the reasons available for the indicated action, using
+  //the provided preselected option
+  populate_select_element(reason_select, action.cleanup_reasons, preselected_option);
+}
+
+//Initialize all DOM elements in the common options section
+export function initialize_common_options(state, cleanup_actions) {
+  const common_action = document.getElementById('common_action');
+  const common_reason = document.getElementById('common_reason');
+  const apply_all = document.getElementById('apply_all');
+  const apply_unset = document.getElementById('apply_unset');
+  const unset_all = document.getElementById('unset_all');
+
+  //Populate the common action/reason select elements with automatic default values
+  populate_select_element(common_action, cleanup_actions, undefined);
+  refresh_reasons_select_element(common_reason, cleanup_actions, common_action.value, undefined);
+
+  //Add an event listener that updates the options available in the reason select element whenever
+  //an action is chosen
+  common_action.addEventListener('change', (event) => {
+    refresh_reasons_select_element(common_reason, cleanup_actions, common_action.value, undefined);
+  });
+
+  //Add an event listener to the button that applies the selected common action and reason to all
+  //revision reviews, overwriting their current selections
+  apply_all.addEventListener('click', () => {
+    const revision_strip = document.getElementById('revision_strip');
+    for (let index = 0; index < state.revisions.length; index++) {
+      const action_select = document.getElementById(`action_${index}`);
+      const reason_select = document.getElementById(`reason_${index}`);
+
+      action_select.value = common_action.value;
+      refresh_reasons_select_element(reason_select, cleanup_actions, common_action.value,
+                                     common_reason.value);
+    }
+  });
+
+  //Add an event listener to the button that applies the selected common action and reason to every
+  //revision review that hasn't been filled in yet.
+  apply_unset.addEventListener('click', () => {
+    for (let index = 0; index < state.revisions.length; index++) {
+      const action_select = document.getElementById(`action_${index}`);
+      const reason_select = document.getElementById(`reason_${index}`);
+
+      //Fill both the action and reason only if none of them have been set yet
+      if (action_select.value === '' && reason_select.value === '') {
+        action_select.value = common_action.value;
+        refresh_reasons_select_element(reason_select, cleanup_actions, common_action.value,
+                                      common_reason.value);
+      }
+    }
+  });
+
+  //Add an event listener to the button that clears every selected action and reason from every
+  //revision review
+  unset_all.addEventListener('click', () => {
+    const revision_strip = document.getElementById('revision_strip');
+    for (let index = 0; index < state.revisions.length; index++) {
+      const action_select = document.getElementById(`action_${index}`);
+      const reason_select = document.getElementById(`reason_${index}`);
+
+      action_select.value = '';
+      refresh_reasons_select_element(reason_select, []);
+    }
+  });
 }
 
 //Query the wiki for information about the current image and update the DOM when completed
@@ -206,17 +305,19 @@ export async function download_revision_data(api_url, state, image_title, cleanu
   const wiki_link = document.getElementById('wiki_link');
   const revision_strip = document.getElementById('revision_strip');
 
+  //Query file information first
   const image_info = await query_image_info(api_url, image_title);
 
   //Set the wiki link URL and get the revisions
   wiki_link.href = image_info.descriptionurl;
   state.revisions = image_info.revisions;
 
+  let min_size = Infinity, max_size = 0;
   for (let index = 0; index < state.revisions.length; index++) {
-    //Create a new item in the thumbnail strip
-    const rev_strip_item = revision_strip.appendChild(document.createElement('div'));
-    rev_strip_item.classList.add('revision');
-    rev_strip_item.innerHTML = `
+    //Create a new element in the thumbnail strip
+    const rev_strip_element = revision_strip.appendChild(document.createElement('div'));
+    rev_strip_element.classList.add('revision');
+    rev_strip_element.innerHTML = `
     <div class="revision_thumbnail" id="revision_img_div_${index}">
       <img id="revision_img_${index}">
     </div>
@@ -231,6 +332,16 @@ export async function download_revision_data(api_url, state, image_title, cleanu
       </div>
       <div id="revision_msg_${index}" style="color: red;">
       </div>
+    </div>
+    <div class="revision_details" id="revision_size_${index}">
+      <div> Size: </div>
+      <div> ${format_storage_units(state.revisions[index].size)} </div>
+    </div>
+    <div class="revision_details">
+      <div> Dimensions: </div>
+      <div> ${state.revisions[index].dimensions} </div>
+      <div> Time: </div>
+      <div> ${format_local_datetime(state.revisions[index].timestamp)} </div>
     </div>
     `;
 
@@ -280,46 +391,59 @@ export async function download_revision_data(api_url, state, image_title, cleanu
       }
     }
     else {
-      //There's no review stored for this revision, populate the action select element with an
-      //automatic default value
+      //There's no review stored for this revision, populate the action and reason select elements
+      //with automatic default values
       populate_select_element(action_select, cleanup_actions, undefined);
-
-      //If an automatic default was set, populate the reason select element with an automatic
-      //default value as well
-      const pre_selected_action = cleanup_actions.find(a => a.name === action_select.value);
-
-      if (pre_selected_action !== undefined) {
-        populate_select_element(reason_select, pre_selected_action.cleanup_reasons, undefined);
-      }
+      refresh_reasons_select_element(reason_select, cleanup_actions, action_select.value,
+                                     undefined);
     }
 
     //Add an event listener that updates the options available in the reason select element whenever
     //an action is chosen
     action_select.addEventListener('change', (event) => {
-      //Get the cleanup reasons for the newly selected action
-      const cleanup_reasons =
-      cleanup_actions.find(a => a.name === action_select.value).cleanup_reasons;
-
-      //Clear the error message (if any), then clear and repopulate the reason select element with
-      //the reasons available for the newly selected action with an automatic default value
+      //Clear the error message (if any), then refresh the reason select element with the reasons
+      //available for the newly selected action with an automatic default value
       msg_div.textContent = '';
-      reason_select.options.length = 0;
-      populate_select_element(reason_select, cleanup_reasons, undefined);
+      refresh_reasons_select_element(reason_select, cleanup_actions, action_select.value,
+                                     undefined);
     });
 
     //Add an event listener that clears the the error message (if any) whenever a reason is chosen
     reason_select.addEventListener('change', (event) => {
       msg_div.textContent = '';
     })
+
+    //Keep track of minimum and maximum file sizes
+    if (state.revisions[index].size < min_size)
+      min_size = state.revisions[index].size;
+
+    if (state.revisions[index].size > max_size)
+      max_size = state.revisions[index].size;
+  }
+
+  //Color scale applied to revision sizes
+  const color_scale = [
+    [   0, 255,   0],   //Green
+    [ 255, 255,   0],   //Yellow
+    [ 255,   0,   0],   //Red
+  ];
+
+  //Color the background of the size fields in the revision strip to give a rough visual comparison
+  if (min_size != max_size) {
+    for (let index = 0; index < state.revisions.length; index++) {
+      const size_div = document.getElementById(`revision_size_${index}`);
+
+      //Calculate a color index using a logarithmic scale between the minimum and maximum size
+      const continuous_index = Math.log10(state.revisions[index].size / min_size) /
+                               Math.log10(max_size / min_size) * (color_scale.length - 1);
+
+      //Map the color and apply
+      const color = color_map(color_scale, continuous_index);
+      size_div.style.backgroundColor = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.5)`;
+    }
   }
 
   select_image(state);  //Refresh the selected image
-}
-
-//Check whether a revision is defined in the similar images (si) object
-function revision_in_similar_images(similar_images, ref_timestamp, si_title, si_timestamp) {
-  return si_title in similar_images[ref_timestamp] &&
-  similar_images[ref_timestamp][si_title].revisions.includes(si_timestamp);
 }
 
 //Query the wiki for information about images similar to the current one and update the DOM when
@@ -342,49 +466,78 @@ export async function download_similar_image_data(api_url, state, similar_images
     return;
 
   //Query for information on similar images
-  const similar_image_info = await query_multiple_images(api_url, similar_image_titles);
+  const wiki_image_info = await query_multiple_images(api_url, similar_image_titles);
 
-  //Iterate over the similar image (si) information provided by the wiki
-  for (const si_title in similar_image_info) {
-    for (const si_timestamp in similar_image_info[si_title]) {
-      //Cross the data provided by the wiki against the data provided by the application
-      //server. If both provide matching information about an specific revision, mark it as
-      //referenced.
-      let revision_referenced = false;
-      for (const ref_timestamp in similar_images) {
-        if (revision_in_similar_images(similar_images, ref_timestamp, si_title, si_timestamp))
+  //Perform a nested iteration over the similar image (si) information object, down to each revision
+  const similar_img_elements = {};  //Temporary holder for element references
+  for (const ref_timestamp in similar_images) {
+    //Prepare an empty array for potential references to similar image strip elements
+    state.similar_img_strip_elements[ref_timestamp] = [];
+    //Note: a zero length array is valid and used to signal that there are no similar images after
+    //downloading image information from the wiki
+
+    for (const [si_title, similar_image_status] of Object.entries(similar_images[ref_timestamp])) {
+      //If the wiki didn't return information for the requested image, skip it, as the image
+      //could've been recently deleted and there's no point in reporting it anymore
+      if (!(si_title in wiki_image_info))
+        continue;
+
+      for (const si_timestamp of similar_image_status.revisions) {
+        //If the wiki didn't return information for the referenced revision, skip it as well
+        if (!(si_timestamp in wiki_image_info[si_title]))
+          continue;
+
+        //If the title and timestamp are in the temporary references, simply link the existing DOM
+        //element, as more than revision is referencing it
+        if (si_title in similar_img_elements && si_timestamp in similar_img_elements[si_title])
         {
-          revision_referenced = true;
-          break;
+          state.similar_img_strip_elements[ref_timestamp].push(
+            similar_img_elements[si_title][si_timestamp]);
+
+          continue;
         }
-      }
 
-      if (revision_referenced) {
-        //Add a new thumbnail to the similar image strip using information provided by the
-        //wiki. Make it initially invisible until a related revision is selected.
-        const img_container = similar_img_strip.appendChild(document.createElement('div'));
-        img_container.classList.add('similar_image');
-        img_container.style.display = 'none';
+        //Add a new DIV container to the similar image strip, then populate it with details
+        //regarding to that particular image. Make it initially invisible until a related revision
+        //is selected.
+        const container = similar_img_strip.appendChild(document.createElement('div'));
+        container.classList.add('similar_image_strip_item');
+        container.style.display = 'none';
+        container.innerHTML = `
+        <div class="similar_image">
+          <img src="${wiki_image_info[si_title][si_timestamp].thumburl}">
+        </div>
+        <div>
+        <div class="similar_image_title">
+          ${si_title}
+        </div>
+          <span style="color: ${similar_images[ref_timestamp][si_title].unused? 'red': 'green'};">
+            ${similar_images[ref_timestamp][si_title].unused? '&cross;': '&check;'}
+          </span>
+          <a href="${wiki_image_info[si_title][si_timestamp].descriptionurl}" target="_blank">
+            ${similar_images[ref_timestamp][si_title].unused? 'Not in use': 'In use'}
+          </a>
+        </div>
+        <div>
+          <span style="color: ${similar_images[ref_timestamp][si_title].reviewed? 'green': 'red'};">
+            ${similar_images[ref_timestamp][si_title].reviewed? '&check;': '&cross;'}
+          </span>
+          <a href="${similar_images[ref_timestamp][si_title].review_url}" target="_blank">
+            ${similar_images[ref_timestamp][si_title].reviewed? 'Reviewed': 'Not reviewed'}
+          </a>
+        </div>
+        `;
 
-        const anchor = img_container.appendChild(document.createElement('a'));
-        anchor.href = similar_image_info[si_title][si_timestamp].descriptionurl;
-        anchor.target = '_blank';
+        //Append the newly created container to the similar image strip elements array, so that it
+        //can be referenced when selecting a revision
+        state.similar_img_strip_elements[ref_timestamp].push(container);
 
-        const img = anchor.appendChild(document.createElement('img'));
-        img.src = similar_image_info[si_title][si_timestamp].thumburl;
+        //Also add the container to the temporary references, so that it can be reused if referenced
+        //by another revision
+        if (!(si_title in similar_img_elements))  //Create the object only once
+          similar_img_elements[si_title] = {};
 
-        //Cross the data again. For each revision that is referenced by both sides, add a
-        //reference of the newly created item to the similar_img_strip_items object.
-        for (const ref_timestamp in similar_images) {
-          if (!revision_in_similar_images(similar_images, ref_timestamp, si_title, si_timestamp))
-            continue;
-
-          //Create the array for the reference timestamp only once
-          if (!(ref_timestamp in state.similar_img_strip_items))
-            state.similar_img_strip_items[ref_timestamp] = [];
-
-          state.similar_img_strip_items[ref_timestamp].push(img_container);
-        }
+        similar_img_elements[si_title][si_timestamp] = container;
       }
     }
   }

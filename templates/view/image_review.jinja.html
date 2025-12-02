@@ -16,25 +16,38 @@
 {% endfilter %}
       </div>
 
-      <h1><a id="wiki_link" target="_blank">{{image['title']}}</a></h1>
+      <div class="title_bar">
+        <div>
+          <h1><a id="wiki_link" target="_blank">{{image['title']}}</a></h1>
+        </div>
+        <div>
+          <h4>
+            Category:
+{% if request.args.category == 'unused_img_all_rev' %}
+            Unused files
+{% elif request.args.category == 'used_img_old_rev' %}
+            Files with older revisions
+{% elif request.args.category == 'used_img_all_rev' %}
+            Files by size
+{% elif request.args.category == 'used_img_all_rev_count' %}
+            Files by amount of revisions
+{% else %}
+            Unknown
+{% endif %}
+          </h4>
+        </div>
+      </div>
 
       <div class="panel_container">
         <div class="panel">
-          <div class="current_img" style="flex-grow: 1">
+          <div class="current_img">
             <img id="current_image">
           </div>
           <div>
-            <div> Similar images: </div>
+            <div id="similar_image_strip_label"></div>
             <div class="similar_image_strip" id="similar_img_strip">
             </div>
           </div>
-          <div>
-            <div> Size: <span id="revision_size"></span></div>
-            <div> Dimensions: <span id="revision_dimensions"></span></div>
-            <div> Time: <span id="revision_time"></span></div>
-          </div>
-        </div>
-        <div class="panel">
           <div>
             <div> Last modification: <span id="last_modification"></span></div>
             <div> Total revisions: {{image['total_revisions']}} </div>
@@ -55,10 +68,35 @@
                 format_storage_units({{image['max_rev_size'] | tojson}});
             </script>
           </div>
+        </div>
+        <div class="panel">
+          <div>
+            <div>
+              Apply to multiple revisions:
+            </div>
+            <div class="common_options">
+              <div>
+                <div>
+                  <label for="common_action">Action:</label>
+                  <select id="common_action"></select>
+                </div>
+                <div>
+                  <label for="common_reason">Reason:</label>
+                  <select id="common_reason"></select>
+                </div>
+              </div>
+              <div>
+                <div><button id="apply_all"> Apply to all </button></div>
+                <div><button id="apply_unset"> Apply to unset only </button></div>
+              </div>
+              <div>
+                <div><button id="unset_all"> Unset all </button></div>
+              </div>
+            </div>
+          </div>
           <div class="revision_section">
             <div> Revisions: </div>
-            <div class="revision_strip" id="revision_strip">
-            </div>
+            <div class="revision_strip" id="revision_strip"></div>
           </div>
           <div>
             <form id="review_form"
@@ -94,8 +132,8 @@
     </div>
 
     <script type="module">
-      import {
-        download_revision_data, download_similar_image_data, register_review_submit_listener }
+      import { download_revision_data, download_similar_image_data, register_review_submit_listener,
+               initialize_common_options }
       from {{url_for('static', filename = 'image_review.js') | tojson}};
 
       const api_url = {{api_url | tojson}};
@@ -109,7 +147,7 @@
       const similar_images = {{similar_images | tojson(indent = 2) | indent(6)}};
 
       const state = {
-        similar_img_strip_items: {},
+        similar_img_strip_elements: {},
         revisions: [],
         selected_image: 0,
       };
@@ -119,6 +157,9 @@
 
       //Asynchronously update the information for similar images as well
       download_similar_image_data(api_url, state, similar_images);
+
+      //Initialize the common options section elements
+      initialize_common_options(state, cleanup_actions);
 
       //Register the submit event listener for the review form
       register_review_submit_listener(state);
