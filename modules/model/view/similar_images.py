@@ -2,21 +2,19 @@ from modules.model import db
 from modules.model.table import hashes, unused_images
 from modules.model.view import image_revisions, review_details
 
-_hash_fields = ', '.join(f'H{i}' for i in range(8))
-
 #Schema initialization function
 @db.schema
 def init_schema() -> None:
   #This view allows to query for the timestamp and one of the hashes for each revision of a specific
   #image
   db.get().execute(
-    f'CREATE VIEW IF NOT EXISTS '
-    f'reference_hashes_view(image_id, revision_timestamp, {_hash_fields}) AS '
-    f'SELECT image_id, timestamp, {_hash_fields} FROM '
-      f'(SELECT revisions.image_id, revisions.timestamp, {_hash_fields}, '
-      f'ROW_NUMBER() OVER (PARTITION BY revisions.id) AS row_num FROM revisions '
-      f'INNER JOIN hashes ON revisions.id = hashes.revision_id)'
-    f'WHERE row_num = 1')
+    'CREATE VIEW IF NOT EXISTS '
+    'reference_hashes_view(image_id, revision_timestamp, hash) AS '
+    'SELECT image_id, timestamp, hash FROM '
+      '(SELECT revisions.image_id, revisions.timestamp, hashes.hash, '
+      'ROW_NUMBER() OVER (PARTITION BY revisions.id) AS row_num FROM revisions '
+      'INNER JOIN hashes ON revisions.id = hashes.revision_id)'
+    'WHERE row_num = 1')
 
 #Perform a search for revisions that are similar to the revisions of a given image, within a maximum
 #hamming distance
@@ -40,10 +38,8 @@ def search(ref_image_id: int, max_dist: int) -> dict[str, dict[str, dict[str, bo
   #Obtain the timestamp and a reference hash for each of the revisions of the given image (every
   #revision can have up to 4 hashes - one per rotation, but any one will do)
   ref_hash_cursor = con.execute(
-    f'SELECT revision_timestamp, {_hash_fields} FROM reference_hashes_view WHERE image_id = ?',
+    'SELECT revision_timestamp, hash FROM reference_hashes_view WHERE image_id = ?',
     (ref_image_id,))
-  ref_hash_cursor.row_factory = lambda cur, row: (row[0],
-                                                  None if None in row[1:9] else bytes(row[1:9]))
 
   result = {}
   for ref_revision_timestamp, ref_hash in ref_hash_cursor:

@@ -102,8 +102,9 @@ def _resize_image_if_needed(stream: Iterator[bytes]) -> tuple[Status, int, bytes
 # - The status of the operation.
 # - The total amount of data retrieved from the stream. This is always returned, even in case of
 #   error.
-# - A set of bytes objects with each representing a hash, or None in case of error.
-def calculate_phashes(stream: Iterator[bytes]) -> tuple[Status, int, set[bytes] | None]:
+# - A set of integers representing hashes or None in case of error. The integers are converted to
+#   64-bit signed format, so that they can be stored efficiently with Sqlite3.
+def calculate_phashes(stream: Iterator[bytes]) -> tuple[Status, int, set[int] | None]:
   #Resize the image with ImageMagick, if needed
   s, input_file_size, raw_data = _resize_image_if_needed(stream)
 
@@ -117,11 +118,11 @@ def calculate_phashes(stream: Iterator[bytes]) -> tuple[Status, int, set[bytes] 
     #The image file could not be recognized
     return (Status.UNSUPPORTED, input_file_size, None)
 
-  #Calculate the hash for every 90 degreee rotation of this image, structuring each as individual
-  #bytes in a tuple
+  #Calculate the hash for every 90 degreee rotation of this image
   hashes = set()  #Use a set to reduce the hashes of images with rotational symmetry
   for angle in range(0, 360, 90):
-    new_hash = bytes.fromhex(str(imagehash.phash(img.rotate(angle, expand = True))))
+    new_hash = int.from_bytes(bytes.fromhex(str(imagehash.phash(img.rotate(angle, expand = True)))),
+                              byteorder = 'big', signed = True)
     hashes.update(set((new_hash,)))
 
   return (Status.OK, input_file_size, hashes)

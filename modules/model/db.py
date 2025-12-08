@@ -38,6 +38,23 @@ def close() -> None:
   if con is not None:
     con.close()
 
+#Load a sqlite3 extension into the active connection if not loaded already
+def load_extension(ext_name: str) -> None:
+  #Attempt to retrieve the extension name list from the request context
+  extensions = getattr(g, '_database_extensions', None)
+
+  #Create a new extension name list if there isn't one yet
+  if extensions is None:
+    extensions = g._database_extensions = []
+
+  #Load the extension if it's not in the list yet
+  if ext_name not in extensions:
+    con = get()
+    con.enable_load_extension(True)
+    con.load_extension(f'sqlite_extensions/{ext_name}.so')
+    con.enable_load_extension(False)
+    extensions.append(ext_name)
+
 _schema_functions = []  #List of schema initialization functions
 
 #Function decorator for registering schema initialization functions

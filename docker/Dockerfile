@@ -1,3 +1,14 @@
+#Stage for building custom sqlite3 extensions
+#---------------------------------------------------------------------------------------------------
+FROM alpine:latest AS extension_builder
+
+ARG SRC_DIR
+RUN apk add make gcc libc-dev sqlite-dev
+COPY --exclude=*.so $SRC_DIR/sqlite_extensions sqlite_extensions/
+RUN make -C sqlite_extensions
+
+#Final stage
+#---------------------------------------------------------------------------------------------------
 FROM alpine:latest
 
 #Install dependencies
@@ -65,6 +76,7 @@ COPY $SRC_DIR/setup-admin-account.py $SRC_DIR/regenerate_user_password.py ./
 COPY $SRC_DIR/modules modules/
 COPY $SRC_DIR/templates templates/
 COPY $SRC_DIR/assets assets/
+COPY --from=extension_builder sqlite_extensions/*.so sqlite_extensions/
 
 #Set up a volume for the database and then initialize it
 RUN mkdir /var/lib/$APP_NAME
