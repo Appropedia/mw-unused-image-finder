@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 from modules.model import db
 from modules.model.table import images, revisions, cleanup_actions, cleanup_reasons
-from modules.model.table import image_reviews, review_authors, revision_reviews
+from modules.model.table import image_reviews, revision_reviews
 
 #Enumeration of operation results
 class Status(enum.Enum):
@@ -51,10 +51,10 @@ def write(image_title: str, user_id: int, form_data: dict[str, str | dict[str, s
     #the database
     try:
       current_time = datetime.now()
-      image_reviews.write(con, image_id, current_time, form_data['comments'])
-      review_authors.write(con, image_id, user_id, current_time);
+      image_review_id = image_reviews.write(con, image_id, user_id, current_time,
+                                            form_data['comments'])
       for data in revision_review_data:
-        revision_reviews.write(con, data['revision_id'], image_id,
+        revision_reviews.write(con, image_review_id, data['revision_id'],
                                data['cleanup_action_id'], data['cleanup_reason_id'])
     except:
       con.rollback()

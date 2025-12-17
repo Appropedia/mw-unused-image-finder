@@ -4,7 +4,7 @@ from werkzeug.exceptions import HTTPException
 from modules.controller import session_control
 from modules.model.table import cleanup_actions, cleanup_choices
 from modules.model.view import cleanup_action_reason_links
-from modules.model.relation import cleanup_action_reasons
+from modules.model.aggregate import cleanup_action_reasons
 
 blueprint = Blueprint('cleanup_action', __name__)
 

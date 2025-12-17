@@ -1,10 +1,10 @@
 from flask import Blueprint, request, abort, g, redirect, url_for, render_template
 from werkzeug.exceptions import HTTPException
 from modules.controller import session_control
-from modules.model.table import image_concessions
+from modules.model.table import users, image_concessions
 from modules.model.view import image_revisions, similar_images
 from modules.model.view import cleanup_action_reason_links, review_details
-from modules.model.relation import image_candidates, review_store
+from modules.model.aggregate import image_candidates, review_store
 from modules.common import config
 
 blueprint = Blueprint('image_review', __name__)
@@ -66,8 +66,43 @@ def request_failed(e: HTTPException) -> tuple[str, int] | HTTPException:
     #intended to be handled by frontend scripts
     return e.description, e.code
 
-#Present a view for viewing, editting or creating image reviews
-def _read(image_title) -> str:
+#Read method handler for the image review view
+def _read(image_title: str) -> str:
+  #Select the rendered page according to the following conditions:
+  # - If a review from a specific user is requested, render that review (if exists)
+  # - If no review from any user exists, render an empty/new review
+  # - If a review from a single user exists, render that review
+  # - If there are multiple stored reviews, render a selection view
+
+  author = request.args.get('author', None)
+  review_authors = review_details.get_authors(image_title)
+  if author is not None:
+    if author in review_authors:
+      return _render_user_review(image_title, author)
+    else:
+      abort(404)
+
+  match len(review_authors):
+    case 0:
+      return _render_user_review(image_title, None)
+    case 1:
+      return _render_user_review(image_title, review_authors[0])
+    case 2:
+      return _render_review_selection(image_title)
+
+#Render a view for choosing an image review from multiple authors
+def _render_review_selection(image_title: str) -> str:
+  review_summary = review_details.get_summary(image_title)
+
+  render_params = {
+    'image_title': image_title,
+    'review_summary': review_summary,
+  }
+
+  return render_template('view/image_review_select.jinja.html', **render_params)
+
+#Render a view for creating, reading or updating image reviews
+def _render_user_review(image_title: str, user_name: str | None) -> str:
   #Read and validate request arguments
   category = request.args.get('category', None)
 
@@ -95,8 +130,14 @@ def _read(image_title) -> str:
   #Add all available cleanup actions and reasons to the render parameters
   render_params['cleanup_actions'] = cleanup_action_reason_links.get_actions_and_reasons()
 
-  #If a review for the image exists already, add its information to the render parameters as well
-  render_params['review_data'] = review_details.get_single(image_id)
+  #If a review author has been specified, retrieve that author's review details and add them to the
+  #render parameters as well
+  if user_name is None:
+    render_params['review_data'] = { 'comments': '', 'cleanup_proposal': {} }
+  else:
+    user_id = users.read_id(user_name)
+    render_params['author'] = user_name
+    render_params['review_data'] = review_details.get_single(image_id, user_id)
 
   #Get all similar images and add the results to the render parameters
   render_params['similar_images'] = similar_images.search(image_id, 12)
@@ -105,7 +146,7 @@ def _read(image_title) -> str:
   for ref_timestamp in render_params['similar_images']:
     for title in render_params['similar_images'][ref_timestamp]:
       render_params['similar_images'][ref_timestamp][title]['review_url'] = \
-        url_for('image_review.handle_review', image_title = title, category = category)
+        url_for('image_review.handle_review', image_title = title)
 
   #Write the concession so other users get other images during the concession period
   image_concessions.write(g.user_id, image_id)
@@ -121,7 +162,7 @@ def _read(image_title) -> str:
 def _update(image_title) -> str:
   _validate_update_args
   status = review_store.write(image_title, g.user_id, request.json)
-  return _handle_reviews_return_status(status)
+  return _handle_review_store_return_status(status)
 
 #Make sure the update query parameters are valid or abort the request
 def _validate_update_args() -> None:
@@ -158,9 +199,9 @@ def _validate_update_args() -> None:
     if not isinstance(value['reason'], str):
       abort(400, 'INVALID_TYPE,action')
 
-#Handle the return status of a reviews module call, returning either 200 - 'OK' or a simplified
+#Handle the return status of a review store module call, returning either 200 - 'OK' or a simplified
 #error message accompanied by the corresponding HTTP error code
-def _handle_reviews_return_status(status: review_store.Status) -> str:
+def _handle_review_store_return_status(status: review_store.Status) -> str:
   match status:
     case review_store.Status.SUCCESS:
       return 'OK'

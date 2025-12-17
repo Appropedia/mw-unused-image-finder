@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> Review - {{image_title}} </title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
+  </head>
+  <body>
+{% set top_left_link = ['default.view', 'Back to main'] %}
+{% filter indent(width = 4, first = True) %}
+  {% include 'common/top_bar.jinja.html' %}
+{% endfilter %}
+    <h1>{{image_title}}</h1>
+
+    This image has multiple reviews:
+
+    <ul id="review_list">
+{% for rs in review_summary %}
+{% set review_url = url_for('image_review.handle_review', image_title = image_title,
+                            author = rs['user_name']) %}
+      <li>
+        <a href="{{review_url}}"> {{rs['timestamp']}} </a> by {{rs['user_name']}}
+      </li>
+{% endfor %}
+    </ul>
+    <script type="module">
+      import { format_local_datetime }
+      from {{url_for('static', filename = 'format_utils.js') | tojson}};
+
+      const review_list = document.getElementById('review_list');
+
+      for (let list_item of review_list.children) {
+        const anchor_element = list_item.children[0];
+        anchor_element.textContent = format_local_datetime(anchor_element.textContent.trim());
+      }
+    </script>
+  </body>
+</html>

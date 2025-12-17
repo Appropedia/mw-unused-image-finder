@@ -22,6 +22,12 @@ def create(name: str, password: str, status: str) -> int | None:
 
   return None if row is None else row[0]
 
+#Read the id of a given user
+def read_id(name: str) -> str | None:
+  row = db.get().execute('SELECT id FROM users WHERE name = ?', (name,)).fetchone()
+
+  return None if row is None else row[0]
+
 #Read the id and status of a given user
 def read_id_status(name: str) -> tuple[int, str] | tuple[None, None]:
   row = db.get().execute('SELECT id, status FROM users WHERE name = ?', (name,)).fetchone()

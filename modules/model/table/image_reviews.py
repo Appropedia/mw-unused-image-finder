@@ -7,20 +7,25 @@ from modules.model import db
 def init_schema() -> None:
   db.get().execute(
     'CREATE TABLE IF NOT EXISTS image_reviews('
-      'image_id INTEGER PRIMARY KEY REFERENCES images(id) ON DELETE CASCADE, '
-      'auditor_id INTEGER REFERENCES users(id) ON DELETE RESTRICT, '
-      'update_time TEXT NOT NULL, '
-      'approval_time TEXT, '
-      'comments TEXT NOT NULL)')
+      'id INTEGER PRIMARY KEY, '
+      'image_id INTEGER NOT NULL REFERENCES images(id) ON DELETE CASCADE, '
+      'user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, '
+      'timestamp TEXT NOT NULL, '
+      'bot_timestamp TEXT, '
+      'comments TEXT NOT NULL, '
+      'UNIQUE (image_id, user_id))')
 
-#Create a review for a given image or update an existing one
-def write(con: sqlite3.Connection, image_id: int, update_time: datetime, comments: str) -> None:
-  update_time = update_time.astimezone(timezone.utc)  #Make sure the timezone is UTC
+#Create a review for a given image or update an existing one, returning its id
+def write(con: sqlite3.Connection, image_id: int, user_id: int, timestamp: datetime,
+          comments: str) -> None:
+  timestamp = timestamp.astimezone(timezone.utc)  #Make sure the timezone is UTC
 
-  con.execute(
-    'INSERT INTO image_reviews (image_id, update_time, comments) '
-    'VALUES (:image_id, :update_time, :comments) '
-    'ON CONFLICT (image_id) DO UPDATE SET update_time = :update_time, comments = :comments',
+  return con.execute(
+    'INSERT INTO image_reviews (image_id, user_id, timestamp, comments) '
+    'VALUES (:image_id, :user_id, :timestamp, :comments) '
+    'ON CONFLICT (image_id, user_id) DO UPDATE SET timestamp = :timestamp, comments = :comments '
+    'RETURNING id',
     { 'image_id': image_id,
-      'update_time': update_time.replace(microsecond=0).isoformat().replace('+00:00', 'Z'),
-      'comments': comments })
+      'user_id': user_id,
+      'timestamp': timestamp.replace(microsecond=0).isoformat().replace('+00:00', 'Z'),
+      'comments': comments }).fetchone()[0]

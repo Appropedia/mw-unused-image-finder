@@ -12,6 +12,7 @@
 #+-------------------------------------------------------------------------------------------------+
 
 from flask import Blueprint, url_for, request, make_response
+from urllib.parse import urlencode
 from urllib3 import HTTPConnectionPool, HTTPSConnectionPool
 from modules.common import config
 from modules.mediawiki import config as mw_config
@@ -47,9 +48,7 @@ def _on_load():
 def api():
   #Make the request to the mediawiki server on behalf of the client and relay the query parameters
   server = config.root.mediawiki_server.url
-  mw_resp = _pool.urlopen(
-      'GET',
-      server.path + '?' + '&'.join(f'{key}={val}' for key, val in request.args.items()))
+  mw_resp = _pool.urlopen('GET', f'{server.path}?{urlencode(request.args)}')
 
   #Create a response for the client and relay the response data and status code
   resp = make_response(mw_resp.data)

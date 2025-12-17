@@ -12,17 +12,37 @@ blueprint = Blueprint('review_report', __name__)
 def view():
   #Create a dictionary with the available request filters and their valid values, if applicable
   available_filters = {
-    'review_author':  { 'type': 'select', 'options': users.read_name_all() },
-    'cleanup_action': { 'type': 'select', 'options': cleanup_actions.read_name_all() },
-    'cleanup_reason': { 'type': 'select', 'options': cleanup_reasons.read_name_all() },
-    'image_title':    { 'type': 'input' },
+    'review_author':    { 'type': 'select', 'options': users.read_name_all() },
+    'cleanup_action':   { 'type': 'select', 'options': cleanup_actions.read_name_all() },
+    'cleanup_reason':   { 'type': 'select', 'options': cleanup_reasons.read_name_all() },
+    'image_title':      { 'type': 'input' },
+    'multiple_authors': { 'type': 'checkbox', 'invert_as': 'newest_only' },
   }
 
   #Validate the filter request parameters
   _validate_filters(available_filters)
 
   #Gather the filter parameters from the request in a separate dictionary
-  filter_params = { key: value for key, value in request.args.items() if key in available_filters }
+  filter_params = {}
+  for key, options in available_filters.items():
+    match options['type']:
+      case 'select' | 'input':
+        #Pass the text without modification for 'select' and 'input' filters, in case they appear in
+        #the request
+        if key in request.args:
+          filter_params[key] = request.args[key]
+      case 'checkbox':
+        #For checkbox filters, if no inversion is required, pass them as True if they appear in the
+        #request
+        if 'invert_as' not in options and key in request.args:
+          filter_params[key] = True
+
+        #If inversion is required, then pass the filters as True if they don't appear in the request
+        if 'invert_as' in options and key not in request.args:
+          filter_params[options['invert_as']] = True
+
+      case _ as invalid_type:
+        raise ValueError(f'Invalid filter type: {invalid_type}')
 
   #Call the corresponding format handler
   match request.args.get('format'):
@@ -44,7 +64,7 @@ def _read_html(available_filters: dict[str, str | list[str]], filter_params: dic
     'limit': limit,
     'offset': offset,
     'more_results': more_results,
-    'filter_params': filter_params,
+    'filter_params': { key: val for key, val in request.args.items() if key in available_filters},
     'available_filters': available_filters,
     'reviews': reviews,
   }
@@ -85,29 +105,31 @@ def _read_csv(filter_params: dict[str, str]) -> str:
   #blocks, this way the database isn't completely blocked during long transfers
   def csv_format_generator():
     #Yield the table headers
-    yield 'No., File, Revision, Action, Reason, Comments, Last update, Author, Author update time\n'
+    yield 'No.,File,Revision,Action,Reason,Comments,Author,Updated\n'
 
     #Iterate over blocks and then rows
+    row_num = 1
     for block in review_details.get_bulk(filter_params):
-      for num, row in enumerate(block, start = 1):
+      for row in block:
         #Format all the data in separate columns of different length, as the review can contain any
         #number of cleanup proposals and authors and each will need a separate row
         column_data = (
-          (f'{num}',),
+          (f'{row_num}',),
           (f'"{row['image_title']}"',),
           tuple(f'{sub_row['timestamp']}' for sub_row in row['cleanup_proposal']),
           tuple(f'"{sub_row['action']}"' for sub_row in row['cleanup_proposal']),
           tuple(f'"{sub_row['reason']}"' for sub_row in row['cleanup_proposal']),
           (f'"{row['comments'].replace('"', '""')}"',),
-          (f'{row['update_time']}',),
-          tuple(f'"{sub_row['user_name']}"' for sub_row in row['authors']),
-          tuple(f'{sub_row['timestamp']}' for sub_row in row['authors']),
+          (f'"{row['author']}"',),
+          (f'{row['timestamp']}',),
         )
 
         #Generate as many csv rows as the longest column per record, leaving empty csv columns where
         #the data runs out
         for columns in itertools.zip_longest(*column_data, fillvalue = ''):
           yield f'{','.join(columns)}\n'
+
+        row_num += 1
 
   #Return the downloadable data using the generator
   return Response(
@@ -152,6 +174,9 @@ def _validate_filters(filters: dict[str, list[str] | None]) -> None:
           abort(400, f'Invalid filter option for {name}: {request.args[name]}')
       case 'input':
         #Input filters can accept any text so no check is performed
+        pass
+      case 'checkbox':
+        #Checkbox filters are taken as true regardless of their value so no check is performed
         pass
       case _ as invalid_type:
         raise ValueError(f'Invalid filter type: {invalid_type}')

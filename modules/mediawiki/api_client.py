@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from urllib.parse import urlencode
 from urllib3 import HTTPConnectionPool, HTTPSConnectionPool
 from modules.common import config
 from modules.mediawiki import config as mw_config
@@ -23,9 +24,7 @@ def query(params: dict[str, str]) -> Iterator[dict]:
   while True:
     #Perform the request and get the response
     server = config.root.mediawiki_server.url
-    rsp = _pool.urlopen(
-      'GET',
-      server.path + '?' + '&'.join(f'{key}={val}' for key, val in params.items()))
+    rsp = _pool.urlopen('GET', f'{server.path}?{urlencode(params)}')
 
     #Make sure the response is 200 - OK
     if rsp.status != 200:

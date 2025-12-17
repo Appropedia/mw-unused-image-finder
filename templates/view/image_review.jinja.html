@@ -21,20 +21,27 @@
           <h1><a id="wiki_link" target="_blank">{{image['title']}}</a></h1>
         </div>
         <div>
-          <h4>
+{% if 'category' in request.args %}
+          <div><b>
             Category:
-{% if request.args.category == 'unused_img_all_rev' %}
+  {% if request.args.category == 'unused_img_all_rev' %}
             Unused files
-{% elif request.args.category == 'used_img_old_rev' %}
+  {% elif request.args.category == 'used_img_old_rev' %}
             Files with older revisions
-{% elif request.args.category == 'used_img_all_rev' %}
+  {% elif request.args.category == 'used_img_all_rev' %}
             Files by size
-{% elif request.args.category == 'used_img_all_rev_count' %}
+  {% elif request.args.category == 'used_img_all_rev_count' %}
             Files by amount of revisions
-{% else %}
+  {% else %}
             Unknown
+  {% endif %}
+          </b></div>
 {% endif %}
-          </h4>
+{% if author %}
+          <div><b>
+            Author: {{author}}
+          </b></div>
+{% endif %}
         </div>
       </div>
 
