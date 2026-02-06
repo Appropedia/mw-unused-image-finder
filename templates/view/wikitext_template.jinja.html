@@ -1,0 +1,24 @@
+{% from 'macros/wikitext_form.jinja.html' import wikitext_form %}
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> Wikitext Template </title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
+  </head>
+  <body>
+{% set top_left_link = ['default.view', 'Back to main'] %}
+{% filter indent(width = 4, first = True) %}
+  {% include 'common/top_bar.jinja.html' %}
+{% endfilter %}
+  <h1> Wikitext Template </h1>
+    <p>
+      Here you can modify the wikitext template contents for the Mediawiki bot
+    </p>
+    {{wikitext_form(action_url = url_for('wikitext_template.handler'), category = 'wikitext',
+                    maxlen = WIKITEXT_MAX_LEN, rows = 20, cols = 128, content = wikitext) |
+      indent(4) }}
+    The bot accepts specific wikitext extensions, which are detailed
+    <a href="{{url_for('help_page.view', page = 'wikitext')}}">here</a>.
+  </body>
+</html>

@@ -14,6 +14,7 @@ from modules.model.table import cleanup_reasons
 from modules.model.table import cleanup_choices
 from modules.model.table import image_reviews
 from modules.model.table import revision_reviews
+from modules.model.table import wikitext
 from modules.model.view import pending_hashes
 from modules.model.view import image_usage
 from modules.model.view import similar_images

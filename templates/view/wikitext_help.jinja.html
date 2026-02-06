@@ -1,0 +1,219 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> Wikitext Help </title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
+  </head>
+  <body>
+{% set top_left_link = ['default.view', 'Back to main'] %}
+{% filter indent(width = 4, first = True) %}
+  {% include 'common/top_bar.jinja.html' %}
+{% endfilter %}
+    <h1>Wikitext Help</h1>
+    <h2>Magic words</h2>
+    <p>
+      The following magic words are recognized by the bot and will be evaluated <i> before </i> the
+      wikitext is posted to the wiki. Any other magic word will be left as is for the wiki to
+      evaluate.
+    </p>
+    <table>
+      <tr>
+        <th>Variable</th>
+        <th>Example Output</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td><code>{{'{{'}}REVIEWAUTHOR{{'}}'}}</code></td>
+        <td><code>{{session['user_name']}}</code></td>
+        <td>Local account name of the review author</td>
+      </tr>
+      <tr>
+        <td><code>{{'{{'}}REVIEWCOMMENTS{{'}}'}}</code></td>
+        <td><code>This is an example comment</code></td>
+        <td>Text content from the review comments</td>
+      </tr>
+      <tr>
+        <td><code>{{'{{'}}REVIEWTIMESTAMP{{'}}'}}</code></td>
+        <td><code>{{example_iso_time}}</code></td>
+        <td>ISO 8601 review timestamp (can be combined with <code>#time</code>)</td>
+      </tr>
+    </table>
+    <h2>Parser Functions</h2>
+    <p>
+      The following parser functions are recognized by the bot and will be evaluated <i> before </i>
+      the wikitext is posted to the wiki. Any other parser function will be left as is for the wiki
+      to evaluate.
+    </p>
+    <table>
+      <tr>
+        <th>Function definition</th>
+        <th>Description</th>
+      </tr>
+      <tr id="#reviewsections">
+        <td><code>{{'{{#reviewsections:separator|cond|text|cond|text...}}'}}</code></td>
+        <td>
+          Conditionally generates the specified section texts in order of appearance, applying
+          special conditions.<br>
+          Valid <code>cond</code> (condition) values:
+          <ul>
+            <li>
+              <code>UNANIMOUSACTION</code>: Generates the <code>text</code> if a single action is
+              selected for all revisions in a review.
+            </li>
+            <li>
+              <code>MULTIPLEACTIONS</code>: Generates the <code>text</code> if more than one
+              distinct action is selected in a review.
+            </li>
+            <li>
+              <code>UNCONDITIONAL</code>: Always generates the section <code>text</code>.
+            </li>
+          </ul>
+          Note: Separators are omitted for sections with unfulfilled conditions and for empty
+          text arguments.
+        </td>
+      </tr>
+      <tr id="#individualactions">
+        <td><code>{{'{{#individualactions:text|separator}}'}}</code></td>
+        <td>
+          Iterates over the individual actions for each of the revisions in the review and returns
+          the specified text, expanding any tokens in it.<br>
+          Valid iteration-specific tokens:
+          <ul>
+            <li>
+              <code>%%TEXT%%</code>: Individual action wikitext (may contain any other token, which
+              will be expanded).
+            </li>
+            <li>
+              <code>%%REVISIONTIMESTAMP%%</code>: ISO 8601 timestamp of each revision
+              (can be combined with <code>#time</code>).
+            </li>
+            <li>
+              <code>%%ACTIONNAME%%</code>: Name of the action selected for each
+              revision.
+            </li>
+            <li>
+              <code>%%REASONNAME%%</code>: Name of the reason selected for the action.
+            </li>
+            <li>
+              <code>%%ACTIONDESCRIPTION%%</code>: Description of the action selected
+              for each revision.
+            </li>
+            <li>
+              <code>%%REASONDESCRIPTION%%</code>: Description of the reason selected
+              for the action.
+            </li>
+          </ul>
+        </td>
+      </tr>
+      <tr id="#distinctactions">
+        <td><code>{{'{{#distinctactions:text|separator}}'}}</code></td>
+        <td>
+          Iterates over the distinct actions in a review and returns the specified text, expanding
+          any tokens in it.<br>
+          Valid iteration-specific tokens:
+          <ul>
+            <li>
+              <code>%%TEXT%%</code>: Distinct action wikitext (may contain any other token, which will
+              be expanded).
+            </li>
+            <li>
+              <code>%%ACTIONNAME%%</code>: Name of every distinct action selected in
+              the review.
+            </li>
+            <li>
+              <code>%%ACTIONDESCRIPTION%%</code>: Description of every distinct action
+              selected in the review.
+            </li>
+          </ul>
+        </td>
+      </tr>
+      <tr id="#unanimousaction">
+        <td><code>{{'{{#unanimousaction:text}}'}}</code></td>
+        <td>
+          Returns the specified text only if every single action in the review is the same,
+          expanding any tokens in it.<br>
+          Valid context-specific tokens:
+          <ul>
+            <li>
+              <code>%%TEXT%%</code>: Unanimous action wikitext (may contain any other token, which will
+              be expanded).
+            </li>
+            <li>
+              <code>%%ACTIONNAME%%</code>: Name of the single action selected in the
+              review.
+            </li>
+            <li>
+              <code>%%ACTIONDESCRIPTION%%</code>: Description of the single action
+              selected in the review.
+            </li>
+            <li>
+              <code>%%REASONNAMES%%</code>: Comma separated list of the distinct reason
+              names selected for the single action.
+            </li>
+          </ul>
+        </td>
+      </tr>
+      <tr id="#distinctreasons">
+        <td><code>{{'{{#distinctreasons:text|separator}}'}}</code></td>
+        <td>
+          Iterates over the distinct reasons in a review and returns the specified text, expanding
+          any tokens in it.<br>
+          Valid iteration-specific tokens:
+          <ul>
+            <li>
+              <code>%%TEXT%%</code>: Distinct reason wikitext (may contain any other token, which will
+              be expanded).
+            </li>
+            <li>
+              <code>%%REASONNAME%%</code>: Name of every distinct reason selected in
+              the review.
+            </li>
+            <li>
+              <code>%%REASONDESCRIPTION%%</code>: Description of every distinct reason
+              selected in the review.
+            </li>
+          </ul>
+        </td>
+      </tr>
+    </table>
+    <h3>Common Arguments</h3>
+    <ul>
+      <li>
+        <code>separator</code>: Text to be inserted between iterations. Defaults to
+        <code>&lt;br&gt;</code> followed by a line break.
+      </li>
+    </ul>
+    <h3>Limitations</h3>
+    <ul>
+      <li>
+        Tokens in the form <code>%%TOKEN%%</code> are specific to the bot parser functions and are
+        only processed by those that accept them.
+      </li>
+      <li>
+        Only the tokens that are indicated as able to contain other tokens (e.g.
+        <code>%%TEXT%%</code>) will expand their nested tokens as a two step process. No recursion
+        is possible.
+      </li>
+    </ul>
+    <h2>Example template</h2>
+    Here's a readily made template that shows the basic functionality of the bot. You can copy it
+    directly to the <a href="{{url_for('wikitext_template.handler')}}">wikitext template page</a>:
+    <pre style="border: 1px solid black; width: fit-content;"><code id="example_code">{{
+'''This image has been reviewed by {{REVIEWAUTHOR}} at {{#time:r|{{REVIEWTIMESTAMP}}}}
+
+Comments:<br>
+{{REVIEWCOMMENTS}}
+
+{{#reviewsections:
+| UNANIMOUSACTION |
+{{#unanimousaction: %%TEXT%%}}
+| MULTIPLEACTIONS |
+{{#individualactions:%%TEXT%%}}
+| UNCONDITIONAL |
+{{#distinctactions: %%TEXT%%}}<br>
+{{#distinctreasons: %%TEXT%%}}
+}}'''
+  }}</code></pre>
+  </body>
+</html>

@@ -4,8 +4,8 @@ import tomllib
 
 #Overlay a nested dictionary onto another, adding or overriding values.
 #Parameters:
-# - taget: The nested dictionary where data is put.
-# - overlay: The nested dictionary from where data is taken.
+# - target_dict: The nested dictionary where data is put.
+# - overlay_dict: The nested dictionary from where data is taken.
 def overlay(target_dict: dict[str, any], overlay_dict: dict[str, any]):
   #Iterate the overlay dictionary
   for o_key, o_val in overlay_dict.items():

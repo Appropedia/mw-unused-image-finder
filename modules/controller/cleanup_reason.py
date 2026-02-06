@@ -2,7 +2,7 @@ from urllib.parse import quote, unquote
 from flask import Blueprint, request, url_for, render_template, abort
 from werkzeug.exceptions import HTTPException
 from modules.controller import session_control
-from modules.model.table import cleanup_reasons
+from modules.model.table import cleanup_reasons, wikitext as wikitext_table
 from modules.model.view import cleanup_action_reason_links
 
 blueprint = Blueprint('cleanup_reason', __name__)
@@ -10,6 +10,7 @@ blueprint = Blueprint('cleanup_reason', __name__)
 #Field size limits
 NAME_MAX_LEN = 32
 DESCRIPTION_MAX_LEN = 128
+WIKITEXT_MAX_LEN = 256
 
 #Route handler for the cleanup reasons table
 @blueprint.route('/cleanup_reason', methods = ['GET', 'POST'])
@@ -31,6 +32,13 @@ def handle_single(reason: str) -> str:
     case 'GET':    return _read_single(reason)
     case 'PATCH':  return _update(reason)
     case 'DELETE': return _delete(reason)
+
+#Route handler for wikitext liked to reasons
+@blueprint.route('/cleanup_reason/<reason>/wikitext', methods = ['PATCH'])
+@session_control.login_required
+def handle_wikitext(reason: str) -> str:
+  reason = _url_decode(reason)
+  return _update_wikitext(reason)
 
 #Error handler for this blueprint
 @blueprint.errorhandler(HTTPException)
@@ -91,6 +99,8 @@ def _read_single(reason: str) -> str:
 
   if description is None: abort(404)
 
+  wikitext_contents = wikitext_table.read_cleanup_reason(cleanup_reasons.read_id(reason))
+
   render_params = {
     'reason_name': reason,
     'description': description,
@@ -98,6 +108,8 @@ def _read_single(reason: str) -> str:
       'name': action_name,
       'url': url_for('cleanup_action.handle_single', action = action_name),
     } for action_name in cleanup_action_reason_links.get_actions_linked_to_reason(reason)),
+    'WIKITEXT_MAX_LEN': WIKITEXT_MAX_LEN,
+    'distinct_wikitext': wikitext_contents,
   }
 
   return render_template('view/cleanup_reason_single.jinja.html', **render_params)
@@ -112,6 +124,23 @@ def _update(reason: str) -> str:
 def _delete(reason: str) -> str:
   status = cleanup_reasons.delete(reason)
   return _handle_cleanup_reasons_return_status(status)
+
+#Update the wikitext of a cleanup reason
+def _update_wikitext(reason: str) -> str:
+  #Validate request parameters
+  _validate_wikitext()
+
+  #Retrieve the cleanup reason id and validate
+  cleanup_reason_id = cleanup_reasons.read_id(reason)
+
+  if cleanup_reason_id is None:
+    abort(404, 'NOT_FOUND,cleanup_reason')
+
+  #Store the wikitext after all checks are completed
+  wikitext = request.form['wikitext']
+  status = wikitext_table.write_cleanup_reason(cleanup_reason_id,
+                                               wikitext if wikitext != '' else None)
+  return _handle_wikitext_table_return_status(status)
 
 #Encode an arbitrary string as a URL path segment
 def _url_encode(url: str) -> str:
@@ -135,6 +164,13 @@ def _validate_name_description() -> None:
   if len(request.form['description']) > DESCRIPTION_MAX_LEN:
     abort(400, 'FIELD_TOO_LONG,description')
 
+#Make sure the wikitext query parameters are valid or abort the request
+def _validate_wikitext() -> None:
+  if 'wikitext' not in request.form:
+    abort(400, 'MISSING_FIELD,wikitext')
+  if len(request.form['wikitext']) > WIKITEXT_MAX_LEN:
+    abort(400, 'FIELD_TOO_LONG,wikitext')
+
 #Handle the return status of a cleanup_reasons module call, returning either 200 - 'OK' or a
 #simplified error message accompanied by the corresponding HTTP error code
 def _handle_cleanup_reasons_return_status(status: cleanup_reasons.Status) -> str:
@@ -147,3 +183,12 @@ def _handle_cleanup_reasons_return_status(status: cleanup_reasons.Status) -> str
       abort(404, 'NOT_FOUND,cleanup_reason')
     case _:
       abort(500, status.name)
+
+#Handle the return status of a wikitext table module call, returning either 200 - 'OK' or a
+#simplified error message accompanied by the corresponding HTTP error code
+def _handle_wikitext_table_return_status(status: wikitext_table.Status) -> str:
+  match status:
+    case wikitext_table.Status.SUCCESS:
+      return 'OK'
+    case wikitext_table.Status.INVALID_CATEGORY:
+      abort(404, 'NOT_FOUND,category')

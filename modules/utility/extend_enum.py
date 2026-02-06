@@ -1,7 +1,7 @@
 from enum import Enum
 from collections.abc import Callable
 
-#Function decorator for extending an enum with another one
+#Class decorator for extending an enum with another one
 #Assumptions:
 # - Both enums use enum.auto() for all of their member values, otherwise overlapped values or even
 #   exceptions might arise

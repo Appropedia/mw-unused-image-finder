@@ -1,3 +1,4 @@
+{% from 'macros/wikitext_form.jinja.html' import wikitext_form %}
 <!doctype html>
 <html>
   <head>
@@ -10,7 +11,7 @@
 {% filter indent(width = 4, first = True) %}
   {% include 'common/top_bar.jinja.html' %}
 {% endfilter %}
-    <H1> Cleanup reason: {{reason_name}} </H1>
+    <h1> Cleanup reason: {{reason_name}} </h1>
     <p> Description: {{description}} </p>
 {% if cleanup_actions %}
     <p> The following actions are associated to this reason: </p>
@@ -26,5 +27,15 @@
       You can manage all reasons associated to actions from
       <a href="{{url_for('cleanup_action.handle_all')}}"> here </a>
     </p>
+    <h2> Distinct reason wikitext </h2>
+    <p>
+      You can set the contents of the <code>%%TEXT%%</code> token for the
+      <a href="{{url_for('help_page.view', page = 'wikitext', _anchor ='#distinctreasons')}}">
+      <code>#distinctreasons</code></a> parser function here. This is intended to appear just once
+      if this reason is selected in a review and can be used to specify categories if needed.
+    </p>
+    {{wikitext_form(action_url = url_for('cleanup_reason.handle_wikitext', reason = reason_name),
+                    category = 'distinct_wikitext', maxlen = WIKITEXT_MAX_LEN, rows = 4, cols = 64,
+                    content = distinct_wikitext) | indent(4) }}
   </body>
 </html>
