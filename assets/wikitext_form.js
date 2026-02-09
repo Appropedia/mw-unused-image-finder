@@ -19,7 +19,7 @@ export function register_submit_listener(form, response_msg) {
 
     if (response.ok) {
       //If all goes well, briefly show a successful operation message
-      set_text_and_fadeout(response_msg, 'Review saved!', 1000, 500);
+      set_text_and_fadeout(response_msg, 'Wikitext saved!', 1000, 500);
     }
     else {
       //If something goes wrong, use the server response body to show the error message

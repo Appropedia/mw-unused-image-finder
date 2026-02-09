@@ -43,6 +43,22 @@ def init_schema() -> None:
     'LEFT JOIN cleanup_actions ON revision_reviews.cleanup_action_id = cleanup_actions.id '
     'LEFT JOIN cleanup_reasons ON revision_reviews.cleanup_reason_id = cleanup_reasons.id')
 
+  #This view allows to query for information on reviews that are pending synchronization by the
+  #mediawiki bot component
+  con.execute(
+    'CREATE VIEW IF NOT EXISTS '
+    'review_pending_bot_sync_view(image_review_id, image_review_timestamp, image_review_comments, '
+    'image_title, user_name) AS '
+    'SELECT image_reviews.id, image_reviews.timestamp, image_reviews.comments, images.title, '
+    'users.name FROM image_reviews '
+    'INNER JOIN images ON image_reviews.image_id = images.id '
+    'INNER JOIN users ON image_reviews.user_id = users.id '
+    'INNER JOIN (SELECT id AS ordered_image_review_id, '
+      'ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY timestamp DESC, id DESC) AS row_num '
+      'FROM image_reviews) ON image_reviews.id = ordered_image_review_id AND row_num = 1 '
+    'WHERE bot_timestamp IS NULL OR bot_timestamp < timestamp')
+  #Note: The self join filters the newest review in the case of images with multiple user reviews
+
 #Check whether an image has been reviewed yet
 def exists(image_title: str) -> bool:
   return bool(db.get().execute(
@@ -68,6 +84,33 @@ def get_summary(image_title: str) -> list[dict[str, str]]:
 
   return cursor.fetchall()
 
+#Get the cleanup proposal information with the names of the cleanup actions and cleanup reasons for
+#each of the image revisions covered in an image review
+def get_cleanup_proposal(image_review_id: int) -> list[dict[str, int | str]]:
+  cursor = db.get().execute(
+    'SELECT revision_timestamp, cleanup_action_name, cleanup_reason_name '
+    'FROM cleanup_proposal_view WHERE image_review_id = ? ORDER BY revision_timestamp DESC',
+    (image_review_id,))
+
+  cursor.row_factory = lambda cur, row: { 'revision_timestamp': row[0],
+                                          'cleanup_action_name': row[1],
+                                          'cleanup_reason_name': row[2] }
+
+  return cursor.fetchall()
+
+#This is an special version of the function above that takes a separate sqlite3 connection and
+#returns data with shortened field names for JSON generation
+def _get_cleanup_proposal_special(con: sqlite3.Connection,
+                                  image_review_id: int) -> list[dict[str, str]]:
+  cursor = con.execute(
+    'SELECT revision_timestamp, cleanup_action_name, cleanup_reason_name '
+    'FROM cleanup_proposal_view WHERE image_review_id = ? ORDER BY revision_timestamp DESC',
+    (image_review_id,))
+
+  cursor.row_factory = lambda cur, row: { 'timestamp': row[0], 'action': row[1], 'reason': row[2] }
+
+  return cursor.fetchall()
+
 #Get all information stored for a given image review
 def get_single(image_id: int, user_id: int) -> dict[str, str | dict[str, dict[str, str]]]:
   con = db.get()
@@ -83,17 +126,13 @@ def get_single(image_id: int, user_id: int) -> dict[str, str | dict[str, dict[st
   image_review_id, comments = row
 
   #Get the cleanup action and cleanup reason of every revision included in the review
-  cleanup_proposal_cursor = con.execute(
-    'SELECT revision_timestamp, cleanup_action_name, cleanup_reason_name '
-    'FROM cleanup_proposal_view WHERE image_review_id = ?', (image_review_id,)).fetchall()
-
   return {
     'comments': comments,
     'cleanup_proposal': {
-      row[0]: {
-        'cleanup_action_name': row[1],
-        'cleanup_reason_name': row[2],
-      } for row in cleanup_proposal_cursor
+      row['revision_timestamp']: {
+        'cleanup_action_name': row['cleanup_action_name'],
+        'cleanup_reason_name': row['cleanup_reason_name'],
+      } for row in get_cleanup_proposal(image_review_id)
     },
   }
 
@@ -104,7 +143,7 @@ def get_single(image_id: int, user_id: int) -> dict[str, str | dict[str, dict[st
 # - filter_joins: A list of strings containing sql statements to be added as JOIN clauses
 # - filter_conditions: A list of strings containing sql conditions to be added to the WHERE clause
 # - filter_values: A list containing values to be added to the query as positional parameters
-def _sql_filter_params(filter_params: dict[str, str]) -> tuple[list[str], list[any]]:
+def _sql_filter_params(filter_params: dict[str, str]) -> tuple[list[str], list[str], list[any]]:
   filter_joins = []
   filter_conditions = []
   filter_values = []
@@ -129,29 +168,17 @@ def _sql_filter_params(filter_params: dict[str, str]) -> tuple[list[str], list[a
                                                                            '_':  r'\_' }))))
         filter_values.append('\\')
       case 'newest_only':
-        #Filter to get the newest review of each image by performing a self inner join
+        #Filter to get the newest review of each image by performing an inner join
         filter_joins.append(
-          'INNER JOIN (SELECT image_review_id AS ordered_image_review_id, '
-            'ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY image_review_timestamp DESC, '
-            'image_review_id DESC) AS row_num FROM review_filter_view) '
-          'ON image_review_id = ordered_image_review_id AND row_num = 1')
+          'INNER JOIN (SELECT id AS ordered_image_review_id, '
+          'ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY timestamp DESC, id DESC) AS row_num '
+          'FROM image_reviews) ON image_review_id = ordered_image_review_id AND row_num = 1')
         #Note: In the extremely rare case of a tie between two reviews sharing the same timestamp,
         #the one with the largest image_review_id will be chosen
       case _ as invalid_param:
         raise ValueError(f'Invalid filter parameter name: {invalid_param}')
 
   return filter_joins, filter_conditions, filter_values
-
-#Get the cleanup proposal information for each of the image revisions covered in an image review
-def _get_cleanup_proposal(con: sqlite3.Connection, image_review_id: int) -> list[dict[str, str]]:
-  cursor = con.execute(
-    'SELECT revision_timestamp, cleanup_action_name, cleanup_reason_name '
-    'FROM cleanup_proposal_view WHERE image_review_id = ? ORDER BY revision_timestamp DESC',
-    (image_review_id,))
-
-  cursor.row_factory = lambda cur, row: { 'timestamp': row[0], 'action': row[1], 'reason': row[2] }
-
-  return cursor.fetchall()
 
 #Return information about all reviews in a given range
 def get_range(limit: int, offset: int, filter_params: dict[str, str]) -> \
@@ -180,11 +207,13 @@ def get_range(limit: int, offset: int, filter_params: dict[str, str]) -> \
   # - Within the same group, reviews are ordered in ascending time order
   # - As a final untie, images are sorted by image review id, which is unique
 
-  cursor.row_factory = lambda cur, row: { 'image_title': row[1],
-                                          'timestamp': row[2],
-                                          'comments': row[3],
-                                          'author': row[4],
-                                          'cleanup_proposal': _get_cleanup_proposal(con, row[0]) }
+  cursor.row_factory = lambda cur, row: {
+    'image_title': row[1],
+    'timestamp': row[2],
+    'comments': row[3],
+    'author': row[4],
+    'cleanup_proposal': _get_cleanup_proposal_special(con, row[0])
+  }
 
   #Collect all data pertaining to matching reviews
   results = cursor.fetchmany(limit)
@@ -226,7 +255,7 @@ def get_bulk(filter_params: dict[str, str]) -> \
                   'timestamp': row[2],
                   'comments': row[3],
                   'author': row[4],
-                  'cleanup_proposal': _get_cleanup_proposal(con, row[0]) })
+                  'cleanup_proposal': _get_cleanup_proposal_special(con, row[0]) })
 
       #Collect all data pertaining to matching reviews
       #Note: The for loop is used unconventionally to have the last iteration values remain in scope
@@ -244,3 +273,33 @@ def get_bulk(filter_params: dict[str, str]) -> \
       #Update the continuation variables in case there are more blocks
       continue_conditions = ['(image_review_timestamp, image_review_id) > (?, ?)']
       continue_values = [review_details['timestamp'], image_review_id]
+
+#Create an iterator object that returns data about image reviews that are pending synchronization by
+#the mediawiki bot component
+def get_pending_sync_reviews() -> Iterator[dict[str, int | str]]:
+  con = db.get()
+
+  last_image_review_id = -1
+  while True:
+    #Request the data for the next review
+    cursor = con.execute(
+      'SELECT image_review_id, image_review_timestamp, image_review_comments, image_title, '
+      'user_name FROM review_pending_bot_sync_view WHERE image_review_id > ? '
+      'ORDER BY image_review_id LIMIT 1',
+      (last_image_review_id,))
+
+    cursor.row_factory = lambda cur, row: { 'id': row[0],
+                                            'timestamp': row[1],
+                                            'comments': row[2],
+                                            'image_title': row[3],
+                                            'author': row[4] }
+
+    row = cursor.fetchone()
+
+    #Yield reviews one by one until None is returned
+    if row is None: break
+
+    yield row
+
+    #Update the continuation variable in case there's more reviews
+    last_image_review_id = row['id']

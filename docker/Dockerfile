@@ -44,17 +44,23 @@ path = '/var/lib/$APP_NAME/db.sqlite3'
 flask_secret_key_file = '/var/lib/$APP_NAME/flask_secret_key.bin'
 EOF
 
-#Set up crond to run the update script at boot and then periodically
-RUN mkdir /etc/periodic/5min/
+#Set up crond to run the update and bot scripts at their respective moments
 RUN cat <<EOF >> /etc/crontabs/root
 @reboot                                 /$APP_NAME/update_images.sh
 */5     *       *       *       *       /$APP_NAME/update_images.sh
+*/1     *       *       *       *       /$APP_NAME/mediawiki_bot.sh
 EOF
 
 #This wrapper script runs the image update script while preventing concurrent execution
 RUN cat <<EOF > update_images.sh && chmod +x update_images.sh
 cd /$APP_NAME
 flock -x -n "/run/lock/update_images.lock" -c "python/bin/python -m update_images"
+EOF
+
+#This wrapper script runs the mediawiki bot script while preventing concurrent execution
+RUN cat <<EOF > mediawiki_bot.sh && chmod +x mediawiki_bot.sh
+cd /$APP_NAME
+flock -x -n "/run/lock/mediawiki_bot.lock" -c "python/bin/python -m mediawiki_bot"
 EOF
 
 #This wrapper script runs all processes in the container
@@ -71,7 +77,7 @@ exit $?
 EOF
 
 #Install the server application files
-COPY $SRC_DIR/app.py $SRC_DIR/update_images.py ./
+COPY $SRC_DIR/app.py $SRC_DIR/update_images.py $SRC_DIR/mediawiki_bot.py ./
 COPY $SRC_DIR/setup-admin-account.py $SRC_DIR/regenerate_user_password.py ./
 COPY $SRC_DIR/modules modules/
 COPY $SRC_DIR/templates templates/
