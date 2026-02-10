@@ -48,14 +48,16 @@ else:
   password_is_random = False
 
 #Perform a password rule check
-password_ok, password_message = password_rules.check(user_password)
-if not password_ok:
-  print(password_message)
+validity_status = password_rules.check(user_password)
+if validity_status != password_rules.Status.OK:
+  print(validity_status.value)
   exit()
 
 #Perform account creation now
 user_id = users.create(user_name, user_password, 'new_pass' if password_is_random else 'active')
 privileges.create(user_id, 'admin')
+privileges.create(user_id, 'plan')
+privileges.create(user_id, 'review')
 
 print(f'Account created for {user_name}'
       f'{f' with password {user_password}' if password_is_random else ''}')

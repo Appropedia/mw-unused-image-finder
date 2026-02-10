@@ -25,9 +25,9 @@ def view():
         return render_template('view/password_update.jinja.html')
 
       #Do a password rule check
-      password_ok, password_message = password_rules.check(request.form['new_password'])
-      if not password_ok:
-        flash(password_message)
+      validity_status = password_rules.check(request.form['new_password'])
+      if validity_status != password_rules.Status.OK:
+        flash(validity_status.value)
         return render_template('view/password_update.jinja.html')
 
       #Validate the current password

@@ -19,9 +19,9 @@ args = parser.parse_args()
 new_password = random_password.generate_for_user()
 
 #This is just for the sake of data integrity, just in case the password rules are ever changed
-password_ok, password_message = password_rules.check(new_password)
-if not password_ok:
-  print(password_message)
+validity_status = password_rules.check(new_password)
+if validity_status != password_rules.Status.OK:
+  print(validity_status.value)
   exit()
 
 #Update the password and status
