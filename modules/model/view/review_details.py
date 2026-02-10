@@ -161,8 +161,9 @@ def _sql_filter_params(filter_params: dict[str, str]) -> tuple[list[str], list[s
         filter_values.append(value)
       case 'image_title':
         #For text searches, use a LIKE/ESCAPE expression with a pattern that matches any part of the
-        #string, escaping any potential wildcard character in the input string
-        filter_conditions.append('image_title LIKE ? ESCAPE ?')
+        #string after the namespace (e.g. 'File:'), while escaping any potential wildcard character
+        #in the input string
+        filter_conditions.append("SUBSTR(image_title, INSTR(image_title, ':') + 1) LIKE ? ESCAPE ?")
         filter_values.append('%{}%'.format(value.translate(str.maketrans({ '\\': r'\\',
                                                                            '%':  r'\%',
                                                                            '_':  r'\_' }))))

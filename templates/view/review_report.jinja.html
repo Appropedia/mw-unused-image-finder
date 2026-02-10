@@ -1,31 +1,4 @@
-{% set table_header_footer %}
-  {% if offset > 0 %}
-    {% set query_params = dict({ 'limit': limit,
-                                 'offset': offset - limit if offset >= limit else 0 },
-                               **filter_params) %}
-      <a href="?{{query_params | urlencode}}"> Previous {{limit}} </a>
-  {% else %}
-      Previous {{limit}}
-  {% endif %}
-  {% if more_results %}
-    {% set query_params = dict({ 'limit': limit,
-                                 'offset': offset + limit },
-                               **filter_params) %}
-      | <a href="?{{query_params | urlencode}}"> Next {{limit}} </a>
-  {% else %}
-      | Next {{limit}}
-  {% endif %}
-  {% for link_limit in [50,100,250,500] %}
-    {% if link_limit != limit %}
-      {% set query_params = dict({ 'limit': link_limit,
-                                   'offset': offset },
-                                 **filter_params) %}
-      | <a href="?{{query_params | urlencode}}"> {{link_limit}} </a>
-    {% else %}
-      | {{link_limit}}
-    {% endif %}
-  {% endfor %}
-{% endset %}
+{% from 'macros/results_navigation_strip.jinja.html' import results_navigation_strip %}
 <!doctype html>
 <html>
   <head>
@@ -86,7 +59,7 @@
   {% endif %}
 {% endfor %}
       <input type="hidden" name="limit" value="{{limit}}">
-      <button type="send">Apply</button>
+      <button type="submit">Apply</button>
     </form>
     <script type="module">
       document.getElementById('filter_form').addEventListener('submit', (event) => {
@@ -105,7 +78,8 @@
       {{offset + reviews | length}}
     </p>
     <div>
-      {{table_header_footer | trim}}
+      {{results_navigation_strip(limit, offset, more_results, (50,100,250,500), filter_params)
+        | trim | indent(6) }}
     </div>
     <table id="reviews_table" class="size_reference">
       <tr>
@@ -169,7 +143,8 @@
   {% endfor %}
     </table>
     <div>
-      {{table_header_footer | trim}}
+      {{results_navigation_strip(limit, offset, more_results, (50,100,250,500), filter_params)
+        | trim | indent(6) }}
     </div>
     <p>
       Download the full review data (including all pages) as

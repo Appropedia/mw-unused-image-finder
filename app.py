@@ -5,7 +5,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from modules.common import config, app_config, custom_jinja_filters
 from modules.utility import random_password
 from modules.mediawiki import cors_proxy
-from modules.controller import default, session_control, password_update, image_review
+from modules.controller import default, session_control, password_update, image_review, file_search
 from modules.controller import cleanup_action, cleanup_reason, review_report, wikitext_template
 from modules.controller import help_pages
 from modules.model import db
@@ -21,6 +21,7 @@ app.register_blueprint(default.blueprint)
 app.register_blueprint(session_control.blueprint)
 app.register_blueprint(password_update.blueprint)
 app.register_blueprint(image_review.blueprint)
+app.register_blueprint(file_search.blueprint)
 app.register_blueprint(cleanup_action.blueprint)
 app.register_blueprint(cleanup_reason.blueprint)
 app.register_blueprint(review_report.blueprint)

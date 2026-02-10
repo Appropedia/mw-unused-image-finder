@@ -32,6 +32,30 @@ def read_title(id_: int) -> str | None:
   row = db.get().execute('SELECT title FROM images WHERE id = ?', (id_,)).fetchone()
   return None if row is None else row[0]
 
+#Get image titles in a given range filtered by partial title match, ignoring the namespace portion
+#(e.g. 'File:')
+def get_range(limit: int, offset: int, search_term: str) -> tuple[list[str], bool]:
+  #Request the titles matching the provided search term for a limited range while escaping any
+  #potential wildcard character in said term, also request one additional row to confirm that more
+  #rows follow
+  cursor = db.get().execute(
+    "SELECT title FROM images WHERE SUBSTR(title, INSTR(title, ':') + 1) LIKE ? ESCAPE ? "
+    'LIMIT ? OFFSET ?',
+    ('%{}%'.format(search_term.translate(str.maketrans({ '\\': r'\\',
+                                                         '%':  r'\%',
+                                                         '_':  r'\_' }))),
+     '\\', limit + 1, offset))
+
+  cursor.row_factory = lambda cur, row: row[0]
+
+  #Collect all matching titles
+  results = cursor.fetchmany(limit)
+
+  #Attempt to fetch the additional row, if None then no more rows follow
+  more_results = cursor.fetchone() is not None
+
+  return results, more_results
+
 #Delete an image given its title
 def delete(title: str) -> None:
   with db.get() as con:

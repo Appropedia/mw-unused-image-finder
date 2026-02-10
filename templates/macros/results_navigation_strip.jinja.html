@@ -1,0 +1,28 @@
+{% macro results_navigation_strip(limit, offset, more_results, limit_options, additional_params) %}
+  {% if offset > 0 %}
+    {% set query_params = dict(offset = offset - limit if offset >= limit else 0,
+                               limit = limit,
+                               **additional_params) %}
+<a href="?{{query_params | urlencode}}"> Previous {{limit}} </a>
+  {% else %}
+Previous {{limit}}
+  {% endif %}
+  {% if more_results %}
+    {% set query_params = dict(offset = offset + limit,
+                               limit = limit,
+                               **additional_params) %}
+| <a href="?{{query_params | urlencode}}"> Next {{limit}} </a>
+  {% else %}
+| Next {{limit}}
+  {% endif %}
+  {% for new_limit in limit_options %}
+    {% if new_limit != limit %}
+      {% set query_params = dict(offset = offset,
+                                 limit = new_limit,
+                                 **additional_params) %}
+| <a href="?{{query_params | urlencode}}"> {{new_limit}} </a>
+    {% else %}
+| {{new_limit}}
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
