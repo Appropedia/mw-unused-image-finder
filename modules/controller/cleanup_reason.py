@@ -61,34 +61,36 @@ def _create() -> str:
 #Read all cleanup reasons and present them in a table
 def _read_all() -> str:
   render_params = {
-    'fields': (
-      {
-        'name': 'name',
-        'label': 'Name',
-        'allow_update': True,
-        'allow_create': True,
-        'type': 'input',
-        'max_len': NAME_MAX_LEN,
-      },
-      {
-        'name': 'description',
-        'label': 'Description',
-        'allow_update': True,
-        'allow_create': True,
-        'type': 'input',
-        'max_len': DESCRIPTION_MAX_LEN,
-        'size': DESCRIPTION_MAX_LEN // 2,
-      },
-    ),
-    'data': tuple({
-      'link_url': url_for('cleanup_reason.handle_single', reason = _url_encode(row[0])),
-      'form_url': url_for('cleanup_reason.handle_single', reason = _url_encode(row[0])),
-      'content': row,
-    } for row in cleanup_reasons.read_name_description_all()),
-    'link_field': 'name',
-    'allow_create': True,
-    'allow_update': True,
-    'allow_delete': True,
+    'table_descriptor': {
+      'fields': (
+        {
+          'name': 'name',
+          'label': 'Name',
+          'allow_update': True,
+          'allow_create': True,
+          'type': 'input',
+          'max_len': NAME_MAX_LEN,
+        },
+        {
+          'name': 'description',
+          'label': 'Description',
+          'allow_update': True,
+          'allow_create': True,
+          'type': 'input',
+          'max_len': DESCRIPTION_MAX_LEN,
+          'size': DESCRIPTION_MAX_LEN // 2,
+        },
+      ),
+      'rows': tuple({
+        'form_url': url_for('cleanup_reason.handle_single', reason = _url_encode(name)),
+        'cells': (
+          { 'value': name,
+            'link_url': url_for('cleanup_reason.handle_single', reason = _url_encode(name)) },
+          { 'value': description },
+        ),
+      } for name, description in cleanup_reasons.read_name_description_all()),
+      'allow_delete': True,
+    },
   }
 
   return render_template('view/cleanup_reason_all.jinja.html', **render_params)

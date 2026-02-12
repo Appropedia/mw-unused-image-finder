@@ -1,0 +1,158 @@
+{% macro editable_cell(cell, field, row_index, col_index) %}
+{% set cell_index = row_index ~ '_' ~ col_index %}
+  {#
+    Create the element wrapper for the cell value, which can be a hyperlink anchor or a simple span.
+    Give it an id so that it can be hidden/swapped by pressing the edit button.
+  #}
+  {% if 'link_url' in cell %}
+<a href="{{cell['link_url']}}" id="value_label_{{cell_index}}">
+  {% else %}
+<span id="value_label_{{cell_index}}">
+  {% endif %}
+  {#
+    Create the element for the cell value, which can be a checkbox (boolean) or simple text
+  #}
+  {% if field['type'] == 'checkbox' %}
+  <span style="color: {{'green' if cell['value'] else 'red'}};">
+    {{('&check;' if cell['value'] else '&cross;') | safe}}
+  </span>
+  {% else %}
+  {{cell['value']}}
+  {% endif %}
+  {% if 'link_url' in cell %}
+</a>
+  {% else %}
+</span>
+  {% endif %}
+  {% if field['allow_update'] %}
+    {#
+      If updating this field is allowed, create a hidden form element that can accept the new value.
+      Give it an id as well, so it can be revealed/swapped. Also link it to the form below.
+    #}
+    {% if field['type'] == 'input' %}
+<input id="form_element_{{cell_index}}" form="row_{{row_index}}_update_form"
+ name="{{field['name']}}" maxlength="{{field['max_len']}}" size="{{field['size']}}"
+ value="{{cell['value']}}" hidden>
+    {% elif field['type'] == 'checkbox' %}
+<input type="checkbox" id="form_element_{{cell_index}}" form="row_{{row_index}}_update_form"
+ name="{{field['name']}}" {{'checked ' if cell['value'] else ''}}hidden>
+    {% endif %}
+  {% endif %}
+{% endmacro %}
+
+{% macro action_cell(allow_update, allow_delete, form_url, action_buttons, row_index, col_total) %}
+  {% if allow_update %}
+    {#
+      If updating is allowed for any field, create a form that allows editing and submitting changes
+      for this row. Also register the corresponding listeners for button actions.
+    #}
+<form id="row_{{row_index}}_update_form" style="display: inline-block;">
+  <button id="row_{{row_index}}_edit_button" type="button">Edit</button>
+  <button id="row_{{row_index}}_update_button" type="submit" formaction="{{form_url}}"
+   data-method="PATCH" hidden>Update</button>
+</form>
+<script type="module">
+  import { register_edit_listener, register_submit_listener }
+  from {{url_for('static', filename = 'editable_table.js') | tojson}};
+  register_edit_listener({{row_index | tojson}}, {{col_total | tojson}});
+  register_submit_listener(document.getElementById('row_{{row_index}}_update_form'));
+</script>
+  {% endif %}
+  {% if allow_delete %}
+    {#
+      If deletion is allowed, create a minimal form and register a submit listener for this row
+    #}
+<form id="row_{{row_index}}_delete_form" style="display: inline-block;">
+  <button type="submit" formaction="{{form_url}}" data-method="DELETE">Delete</button>
+</form>
+<script type="module">
+  import { register_submit_listener }
+  from {{url_for('static', filename = 'editable_table.js') | tojson}};
+  register_submit_listener(document.getElementById('row_{{row_index}}_delete_form'));
+</script>
+  {% endif %}
+  {% if action_buttons | length > 0 %}
+    {#
+      If action buttons are specified create a form, add the buttons and register a submit listener
+    #}
+<form id="row_{{row_index}}_action_form" style="display: inline-block;">
+    {% for button in action_buttons %}
+  <button type="submit" formaction="{{form_url}}" data-method="{{button['method']}}"
+   name="{{button['name']}}" value="{{button['value']}}">{{button['label']}}</button>
+    {% endfor %}
+</form>
+<script type="module">
+  import { register_submit_listener }
+  from {{url_for('static', filename = 'editable_table.js') | tojson}};
+  register_submit_listener(document.getElementById('row_{{row_index}}_action_form'));
+</script>
+  {% endif %}
+{% endmacro %}
+
+{% macro data_input_row(table_fields) %}
+  {% for field in table_fields %}
+<td>
+    {% if field['allow_create'] %}
+      {% if field['type'] == 'input' %}
+  <input form="row_creation_form" name="{{field['name']}}" maxlength="{{field['max_len']}}"
+   size="{{field['size']}}">
+      {% endif %}
+    {% endif %}
+</td>
+  {% endfor %}
+<td>
+  <form id="row_creation_form">
+    <button type="submit" formaction="{{request.path}}" data-method="POST">Create</button>
+  </form>
+  <script type="module">
+    import { register_submit_listener }
+    from {{url_for('static', filename = 'editable_table.js') | tojson}};
+    register_submit_listener(document.getElementById('row_creation_form'));
+  </script>
+</td>
+{% endmacro %}
+
+{% macro editable_table(table_descriptor) %}
+<table>
+  <tr>
+{% for field in table_descriptor['fields'] %}
+    <th> {{field['label']}} </th>
+{% endfor %}
+    <th> Action </th>
+  </tr>
+{% for row in table_descriptor['rows'] %}
+  {#
+    Keep a reference to the outer loop so it can be accessed from the internal one
+  #}
+  {% set outer_loop = loop %}
+  <tr>
+  {% for cell in row['cells'] %}
+    <td>
+      {{editable_cell(cell,
+                      table_descriptor['fields'][loop.index0],
+                      outer_loop.index0,
+                      loop.index0) | trim | indent(6)}}
+    </td>
+  {% endfor %}
+    <td>
+      {{action_cell(table_descriptor['fields'] | selectattr('allow_update') | list | length > 0,
+                    table_descriptor['allow_delete'],
+                    row['form_url'],
+                    row['action_buttons'],
+                    loop.index0,
+                    row['cells'] | length) | trim | indent(6)}}
+    </td>
+  </tr>
+{% endfor %}
+{% if table_descriptor['fields'] | selectattr('allow_create') | list | length > 0 %}
+  {#
+    If creation is allowed for any field, create an extra row with a form that allows inputting new
+    data
+  #}
+  <tr>
+    {{data_input_row(table_descriptor['fields']) | trim | indent(4)}}
+  </tr>
+{% endif %}
+</table>
+<span id="response_msg" style="line-height=1.5em;">&#8203;​​​​​​​​</span>
+{% endmacro %}

@@ -1,3 +1,4 @@
+{% from 'macros/editable_table.jinja.html' import editable_table %}
 {% from 'macros/wikitext_form.jinja.html' import wikitext_form %}
 <!doctype html>
 <html>
@@ -17,9 +18,7 @@
     <p>
       Here you can define the reasons that can be chosen for this action while reviewing images
     </p>
-{% filter indent(width = 4, first = True) %}
-  {% include 'common/editable_table.jinja.html' %}
-{% endfilter %}
+    {{editable_table(table_descriptor) | trim | indent(4)}}
     <h2> Individual action wikitext </h2>
     <p>
       You can set the contents of the <code>%%TEXT%%</code> token for the

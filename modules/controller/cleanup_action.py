@@ -1,5 +1,6 @@
 from urllib.parse import quote, unquote
 from flask import Blueprint, request, url_for, render_template, abort
+from markupsafe import Markup
 from werkzeug.exceptions import HTTPException
 from modules.controller import session_control
 from modules.model.table import cleanup_actions, cleanup_choices, wikitext as wikitext_table
@@ -69,38 +70,52 @@ def _create() -> str:
 
 #Read all cleanup actions and present them in a table
 def _read_all() -> str:
+  name_description_list = cleanup_actions.read_name_description_all()
+
   render_params = {
-    'fields': (
-      {
-        'name': 'name',
-        'label': 'Name',
-        'allow_update': True,
-        'allow_create': True,
-        'type': 'input',
-        'max_len': NAME_MAX_LEN,
-      },
-      {
-        'name': 'description',
-        'label': 'Description',
-        'allow_update': True,
-        'allow_create': True,
-        'type': 'input',
-        'max_len': DESCRIPTION_MAX_LEN,
-        'size': DESCRIPTION_MAX_LEN // 2,
-      },
-    ),
-    'data': tuple({
-      'link_url': url_for('cleanup_action.handle_single', action = _url_encode(row[0])),
-      'form_url': url_for('cleanup_action.handle_single', action = _url_encode(row[0])),
-      'content': row,
-    } for row in cleanup_actions.read_name_description_all()),
-    'link_field': 'name',
-    'allow_create': True,
-    'allow_update': True,
-    'allow_delete': True,
-    'reordering': {
-      'name': 'move_position',
-      'direction': ('backward', 'forward'),
+    'table_descriptor': {
+      'fields': (
+        {
+          'name': 'name',
+          'label': 'Name',
+          'allow_update': True,
+          'allow_create': True,
+          'type': 'input',
+          'max_len': NAME_MAX_LEN,
+        },
+        {
+          'name': 'description',
+          'label': 'Description',
+          'allow_update': True,
+          'allow_create': True,
+          'type': 'input',
+          'max_len': DESCRIPTION_MAX_LEN,
+          'size': DESCRIPTION_MAX_LEN // 2,
+        },
+      ),
+      'rows': tuple({
+        'form_url': url_for('cleanup_action.handle_single', action = _url_encode(name)),
+        'cells': (
+          { 'value': name,
+            'link_url': url_for('cleanup_action.handle_single', action = _url_encode(name)) },
+          { 'value': description },
+        ),
+        'action_buttons': (
+          *(({
+            'name': 'move_position',
+            'label': Markup('&uarr;'),
+            'value': 'backward',
+            'method': 'PATCH',
+          },) if index > 0 else ()),
+          *(({
+            'name': 'move_position',
+            'label': Markup('&darr;'),
+            'value': 'forward',
+            'method': 'PATCH',
+          },) if index < len(name_description_list) - 1 else ()),
+        ),
+      } for index, (name, description) in enumerate(name_description_list)),
+      'allow_delete': True,
     },
   }
 
@@ -108,49 +123,74 @@ def _read_all() -> str:
 
 #Read a single cleanup action and present its details
 def _read_single(action: str) -> str:
-  description = cleanup_actions.read_description(action)
+  action_description = cleanup_actions.read_description(action)
 
-  if description is None: abort(404)
+  if action_description is None: abort(404)
 
   cleanup_reasons = cleanup_action_reason_links.get_reasons_linked_to_action(action)
+
+  #Reordering is limited to the cleanup reasons that are linked, which always come first in the
+  #query. The amount of linked reasons is inferred by finding the offset of the first row that is
+  #unlinked. In case all all rows are linked the limit is set to their total.
+  link_count = next((index for index, row in enumerate(cleanup_reasons) if not row[0]),
+                    len(cleanup_reasons))
 
   wikitext_contents = wikitext_table.read_cleanup_action(cleanup_actions.read_id(action))
 
   render_params = {
     'action_name': action,
-    'description': description,
-    'fields': (
-      {
-        'name': 'valid_choice',
-        'label': 'Valid choice',
-        'allow_update': True,
-        'type': 'checkbox',
-      },
-      {
-        'name': 'name',
-        'label': 'Name',
-      },
-      {
-        'name': 'description',
-        'label': 'Description',
-      },
-    ),
-    'data': tuple({
-      'link_url': url_for('cleanup_reason.handle_single', reason = _url_encode(row[1])),
-      'form_url': url_for('cleanup_action.handle_reason', action = _url_encode(action),
-                                                          reason = _url_encode(row[1])),
-      'content': row,
-    } for row in cleanup_reasons),
-    'link_field': 'name',
-    'allow_update': True,
-    'reordering': {
-      'name': 'move_position',
-      'direction': ('backward', 'forward'),
-      'limit': next((index for index, row in enumerate(cleanup_reasons) if not row[0]),
-                    len(cleanup_reasons)),
-      #Note: Reordering is limited to the cleanup reasons that are linked, which always come first
-      #in the query. The amount of linked reasons is inferred by finding the offset of the first
-      #row that is unlinked. In case all all rows are linked the limit is set to their total.
+    'description': action_description,
+    'table_descriptor': {
+      'fields': (
+        {
+          'name': 'valid_choice',
+          'label': 'Valid choice',
+          'type': 'checkbox',
+        },
+        {
+          'name': 'name',
+          'label': 'Name',
+        },
+        {
+          'name': 'description',
+          'label': 'Description',
+        },
+      ),
+      'rows': tuple({
+        'form_url': url_for('cleanup_action.handle_reason', action = _url_encode(action),
+                                                            reason = _url_encode(reason)),
+        'cells': (
+          { 'value': is_linked },
+          { 'value': reason,
+            'link_url': url_for('cleanup_reason.handle_single', reason = _url_encode(reason)) },
+          { 'value': reason_description },
+        ),
+        'action_buttons': (
+          *(({
+            'name': 'valid_choice',
+            'label': 'Unbind',
+            'value': '0',
+            'method': 'PATCH',
+          },) if is_linked else ({
+            'name': 'valid_choice',
+            'label': 'Bind',
+            'value': '1',
+            'method': 'PATCH',
+          },)),
+          *(({
+            'name': 'move_position',
+            'label': Markup('&uarr;'),
+            'value': 'backward',
+            'method': 'PATCH',
+          },) if index > 0 and index < link_count else ()),
+          *(({
+            'name': 'move_position',
+            'label': Markup('&darr;'),
+            'value': 'forward',
+            'method': 'PATCH',
+          },) if index < len(cleanup_reasons) - 1 and index < link_count - 1 else ()),
+        ),
+      } for index, (is_linked, reason, reason_description) in enumerate(cleanup_reasons)),
     },
     'WIKITEXT_MAX_LEN': WIKITEXT_MAX_LEN,
     'individual_wikitext': wikitext_contents['individual'],
