@@ -1,3 +1,4 @@
+{% from 'macros/top_bar.jinja.html' import top_bar %}
 {% from 'macros/results_navigation_strip.jinja.html' import results_navigation_strip %}
 <!doctype html>
 <html>
@@ -7,41 +8,38 @@
     <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
   </head>
   <body>
-{% set top_left_link = ['default.view', 'Back to main'] %}
-{% filter indent(width = 4, first = True) %}
-  {% include 'common/top_bar.jinja.html' %}
-{% endfilter %}
+    {{top_bar('Back to main', 'default.view') | indent(4)}}
 
-  <H1> File search </H1>
+    <H1> File search </H1>
 
-  <form>
-    <label for="term">File name contains:</label>
-    <input id="term" name="term" value="{{term}}"></input>
-    <input type="hidden" name="limit" value="{{limit}}">
-    <button type="submit">Search</button>
-  </form>
+    <form>
+      <label for="term">File name contains:</label>
+      <input id="term" name="term" value="{{term}}">
+      <input type="hidden" name="limit" value="{{limit}}">
+      <button type="submit">Search</button>
+    </form>
 {% if results is defined %}
   {% if results | length > 0 %}
-  <p>
-    Showing {{results | length}} result{{'s' if results | length > 1}} from {{offset + 1}} to
-    {{offset + results | length}}
-    <br>
-    {{results_navigation_strip(limit, offset, more_results, (50, 100, 250, 500), { 'term': term })
-      | trim | indent(2)}}
-  </p>
-  <ul>
+    <p>
+      Showing {{results | length}} result{{'s' if results | length > 1}} from {{offset + 1}} to
+      {{offset + results | length}}
+      <br>
+      {{results_navigation_strip(limit, offset, more_results, (50, 100, 250, 500), { 'term': term })
+        | trim | indent(6)}}
+    </p>
+    <ul>
     {% for r in results %}
-    <li><a href="{{url_for('image_review.handle_review', image_title = r)}}">{{r}}</a></li>
+      <li><a href="{{url_for('image_review.handle_review', image_title = r)}}">{{r}}</a></li>
     {% endfor %}
-  </ul>
-  <p>
-    {{results_navigation_strip(limit, offset, more_results, (50, 100, 250, 500), { 'term': term })
-      | trim | indent(2)}}
-  </p>
+    </ul>
+    <p>
+      {{results_navigation_strip(limit, offset, more_results, (50, 100, 250, 500), { 'term': term })
+        | trim | indent(6)}}
+    </p>
   {% else %}
-  <p>
-    No matches found
-  <p>
+    <p>
+      No matches found
+    <p>
   {% endif %}
 {% endif %}
   </body>

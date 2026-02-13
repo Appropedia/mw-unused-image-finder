@@ -1,3 +1,4 @@
+{% from 'macros/top_bar.jinja.html' import top_bar %}
 <!doctype html>
 <html>
   <head>
@@ -6,10 +7,7 @@
     <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
   </head>
   <body>
-{% set top_left_link = ['default.view', 'Back to main'] %}
-{% filter indent(width = 4, first = True) %}
-  {% include 'common/top_bar.jinja.html' %}
-{% endfilter %}
+    {{top_bar('Back to main', 'default.view') | indent(4)}}
     <h1>Wikitext Help</h1>
     <h2>Magic words</h2>
     <p>

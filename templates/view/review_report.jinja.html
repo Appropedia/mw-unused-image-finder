@@ -1,3 +1,4 @@
+{% from 'macros/top_bar.jinja.html' import top_bar %}
 {% from 'macros/results_navigation_strip.jinja.html' import results_navigation_strip %}
 <!doctype html>
 <html>
@@ -18,10 +19,7 @@
     </style>
   </head>
   <body>
-{% set top_left_link = ['default.view', 'Back to main'] %}
-{% filter indent(width = 4, first = True) %}
-  {% include 'common/top_bar.jinja.html' %}
-{% endfilter %}
+    {{top_bar('Back to main', 'default.view') | indent(4)}}
     <h1> Review report </h1>
     <p>
       All submitted reviews are listed here

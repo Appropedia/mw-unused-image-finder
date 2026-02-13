@@ -1,0 +1,18 @@
+{% macro top_bar(top_left_text, top_left_link_endpoint) %}
+<div style="display: flex; justify-content: space-between">
+  <div>
+  {% if top_left_link_endpoint %}
+    <a href="{{url_for(top_left_link_endpoint)}}">{{top_left_text}}</a>
+  {% else %}
+    {{top_left_text}}
+  {% endif %}
+  </div>
+  <div>
+  {% if session['user_name'] %}
+    {{session['user_name']}}
+  {% endif %}
+    <a href="{{url_for('session_control.logout')}}">Log out</a>
+  </div>
+</div>
+<hr>
+{%- endmacro %}
