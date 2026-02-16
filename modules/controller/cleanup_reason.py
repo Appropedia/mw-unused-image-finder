@@ -82,14 +82,17 @@ def _read_all() -> str:
         },
       ),
       'rows': tuple({
-        'form_url': url_for('cleanup_reason.handle_single', reason = _url_encode(name)),
         'cells': (
           { 'value': name,
             'link_url': url_for('cleanup_reason.handle_single', reason = _url_encode(name)) },
           { 'value': description },
         ),
+        'actions': {
+          'allow_update': True,
+          'allow_delete': True,
+          'form_url': url_for('cleanup_reason.handle_single', reason = _url_encode(name)),
+        },
       } for name, description in cleanup_reasons.read_name_description_all()),
-      'allow_delete': True,
     },
   }
 

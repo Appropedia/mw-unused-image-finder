@@ -34,10 +34,18 @@ export function register_edit_listener(row, col_total) {
 // - form: The main form element to be handled. It must contain one or more submitters (e.g. submit
 //   buttons) that specify the "action" URL property and a custom "data-method" property that
 //   specifies the HTTP method that will be used to send the form.
-export function register_submit_listener(form) {
+export function register_submit_listener(form, confirm_message) {
   form.addEventListener('submit', async (event) => {
     //Disallow default handling of the form
     event.preventDefault();
+
+    //Show a confirmation message if provided, then abort if the user cancels
+    if ('warning' in event.submitter.dataset) {
+      const message = JSON.parse(event.submitter.dataset.warning);
+      if (message != null && !confirm(message)) {
+        return;
+      }
+    }
 
     //Form data is handled in a way that deviates from standard form submission (in particular
     //checkboxes are always included regardless of their checked state). Iterate over the form

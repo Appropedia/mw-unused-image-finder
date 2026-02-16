@@ -94,28 +94,31 @@ def _read_all() -> str:
         },
       ),
       'rows': tuple({
-        'form_url': url_for('cleanup_action.handle_single', action = _url_encode(name)),
         'cells': (
           { 'value': name,
             'link_url': url_for('cleanup_action.handle_single', action = _url_encode(name)) },
           { 'value': description },
         ),
-        'action_buttons': (
-          *(({
-            'name': 'move_position',
-            'label': Markup('&uarr;'),
-            'value': 'backward',
-            'method': 'PATCH',
-          },) if index > 0 else ()),
-          *(({
-            'name': 'move_position',
-            'label': Markup('&darr;'),
-            'value': 'forward',
-            'method': 'PATCH',
-          },) if index < len(name_description_list) - 1 else ()),
-        ),
+        'actions': {
+          'allow_update': True,
+          'allow_delete': True,
+          'form_url': url_for('cleanup_action.handle_single', action = _url_encode(name)),
+          'buttons': (
+            *(({
+              'name': 'move_position',
+              'label': Markup('&uarr;'),
+              'value': 'backward',
+              'method': 'PATCH',
+            },) if index > 0 else ()),
+            *(({
+              'name': 'move_position',
+              'label': Markup('&darr;'),
+              'value': 'forward',
+              'method': 'PATCH',
+            },) if index < len(name_description_list) - 1 else ()),
+          ),
+        },
       } for index, (name, description) in enumerate(name_description_list)),
-      'allow_delete': True,
     },
   }
 
@@ -157,39 +160,41 @@ def _read_single(action: str) -> str:
         },
       ),
       'rows': tuple({
-        'form_url': url_for('cleanup_action.handle_reason', action = _url_encode(action),
-                                                            reason = _url_encode(reason)),
         'cells': (
           { 'value': is_linked },
           { 'value': reason,
             'link_url': url_for('cleanup_reason.handle_single', reason = _url_encode(reason)) },
           { 'value': reason_description },
         ),
-        'action_buttons': (
-          *(({
-            'name': 'valid_choice',
-            'label': 'Unbind',
-            'value': '0',
-            'method': 'PATCH',
-          },) if is_linked else ({
-            'name': 'valid_choice',
-            'label': 'Bind',
-            'value': '1',
-            'method': 'PATCH',
-          },)),
-          *(({
-            'name': 'move_position',
-            'label': Markup('&uarr;'),
-            'value': 'backward',
-            'method': 'PATCH',
-          },) if index > 0 and index < link_count else ()),
-          *(({
-            'name': 'move_position',
-            'label': Markup('&darr;'),
-            'value': 'forward',
-            'method': 'PATCH',
-          },) if index < len(cleanup_reasons) - 1 and index < link_count - 1 else ()),
-        ),
+        'actions': {
+          'form_url': url_for('cleanup_action.handle_reason', action = _url_encode(action),
+                                                              reason = _url_encode(reason)),
+          'buttons': (
+            *(({
+              'name': 'valid_choice',
+              'label': 'Disallow',
+              'value': '0',
+              'method': 'PATCH',
+            },) if is_linked else ({
+              'name': 'valid_choice',
+              'label': 'Allow',
+              'value': '1',
+              'method': 'PATCH',
+            },)),
+            *(({
+              'name': 'move_position',
+              'label': Markup('&uarr;'),
+              'value': 'backward',
+              'method': 'PATCH',
+            },) if index > 0 and index < link_count else ()),
+            *(({
+              'name': 'move_position',
+              'label': Markup('&darr;'),
+              'value': 'forward',
+              'method': 'PATCH',
+            },) if index < len(cleanup_reasons) - 1 and index < link_count - 1 else ()),
+          ),
+        },
       } for index, (is_linked, reason, reason_description) in enumerate(cleanup_reasons)),
     },
     'WIKITEXT_MAX_LEN': WIKITEXT_MAX_LEN,
