@@ -1,0 +1,35 @@
+{% from 'macros/top_bar.jinja.html' import top_bar %}
+{% from 'macros/editable_table.jinja.html' import editable_table %}
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> User management </title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
+  </head>
+  <body>
+    {{top_bar('Back to main', 'default.view') | indent(4)}}
+    <h1> User management </h1>
+    <h2> User privileges and status </h2>
+    <p> Here you can set user privileges, ban/reinstate users and delete user accounts </p>
+    {{editable_table(table_descriptor) | trim | indent(4)}}
+    <h2> Account management actions </h2>
+    <ul>
+      <li><a href="{{url_for('user_management.create_user')}}">Create new user account</a></li>
+      <li><a href="{{url_for('user_management.password_reset')}}">Reset user password</a></li>
+    </ul>
+    <h2> Privilege description </h2>
+    <ul>
+{% for privilege_name, rights in privilege_description.items() %}
+      <li>
+        {{privilege_name}}:
+        <ul>
+  {% for description in rights %}
+          <li>{{description}}</li>
+  {% endfor %}
+        </ul>
+      </li>
+{% endfor %}
+    </ul>
+  </body>
+</html>

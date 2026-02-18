@@ -203,6 +203,7 @@ function populate_select_element(select_element, options, preselected_option) {
   //Add a default disabled guidance option
   const default_option = new Option('-- Select an option --', '');
   default_option.disabled = true;
+  default_option.hidden = true;
   default_option.selected = preselected_option === null ||
                             preselected_option === '' ||
                             preselected_option === undefined && options.length > 1;

@@ -20,14 +20,14 @@ def login():
         abort(400)
 
       #Authenticate the user now
-      password_valid, user_status = users.authenticate(name = request.form['user_name'],
-                                                       password = request.form['user_password'])
+      password_valid, ban_status = users.authenticate(name = request.form['user_name'],
+                                                      password = request.form['user_password'])
 
       if not password_valid:
         flash('Invalid user credentials.')
         return render_template('view/login.jinja.html')
 
-      if user_status == 'banned':
+      if ban_status:
         flash('Your account has been banned. Please contact your site administrator for details.')
         return render_template('view/login.jinja.html')
 
@@ -59,14 +59,17 @@ def check(request_endpoint, route_handler: Callable):
     #Login required and user not logged in, redirect to login view
     return redirect(url_for('session_control.login'))
 
-  #User is logged in, store user information in the global context
-  g.user_id, g.user_status = users.read_id_status(session['user_name'])
+  #User is logged in, store the user id in the global context
+  g.user_id, password_reset, ban_status = users.read_id_status(session['user_name'])
 
-  if g.user_status is None or g.user_status == 'banned':
+  if g.user_id is None or ban_status:
     #Invalid or banned account, drop the session immediately
     session.pop('user_name', None)
     abort(401)
 
-  if g.user_status == 'new_pass' and request_endpoint != 'password_update.view':
+  if password_reset:
     #The account has a new generated password, prompt for password update
-    return redirect(url_for('password_update.view'))
+    if request_endpoint != 'password_update.view':
+      return redirect(url_for('password_update.view'))
+    else:
+      g.user_password_reset = True

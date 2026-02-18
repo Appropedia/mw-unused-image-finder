@@ -1,0 +1,53 @@
+{% from 'macros/top_bar.jinja.html' import top_bar %}
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> Create new user account </title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
+  </head>
+  <body>
+    {{top_bar('Back to user management', 'user_management.handle_all') | indent(4)}}
+    <h1> Create new user account </h1>
+    <p> You can create new user accounts here. </p>
+    <p> Remember to use a private channel in order to communicate the generated password. </p>
+    <form method="POST">
+      <div>
+        <label for="user_name">User name:</label>
+        <input id="user_name" name="user_name" required>
+      </div>
+      <div>
+        Privileges:
+      </div>
+{% for name, label in valid_privileges.items() %}
+      <div>
+        <input id="{{name}}" name="{{name}}" type="checkbox" value="1">
+        <label for="{{name}}">{{label}}</label>
+      </div>
+{% endfor %}
+      <div>
+        <button type="submit">Create account</button>
+      </div>
+    </form>
+{% for category, message in get_flashed_messages(True) %}
+  {% if category == 'error' %}
+    <p style="color: red;">{{message}}</p>
+  {% else %}
+    <p>{{message}}</p>
+  {% endif %}
+{% endfor %}
+    <h2> Privilege description </h2>
+    <ul>
+{% for privilege_name, rights in privilege_description.items() %}
+      <li>
+        {{privilege_name}}:
+        <ul>
+  {% for description in rights %}
+          <li>{{description}}</li>
+  {% endfor %}
+        </ul>
+      </li>
+{% endfor %}
+    </ul>
+  </body>
+</html>

@@ -9,10 +9,10 @@ def init_schema() -> None:
     'SELECT users.name, privileges.name FROM users '
     'INNER JOIN privileges ON users.id = privileges.user_id')
 
-#Get the user names of any previously registered administrator accounts
-def get_administrator_names() -> list[str]:
+#Get the privileges of a given user
+def get(user_name: str) -> list[str]:
   cursor = db.get().execute(
-    'SELECT user_name FROM user_privileges_view WHERE privilege_name = "admin"')
+    'SELECT privilege_name FROM user_privileges_view WHERE user_name = ?', (user_name,))
   cursor.row_factory = lambda cur, row: row[0]
   return cursor.fetchall()
 
@@ -21,3 +21,10 @@ def check(user_name: str, privilege_name: str) -> bool:
   return bool(db.get().execute(
     'SELECT EXISTS (SELECT 1 FROM user_privileges_view WHERE user_name = ? AND privilege_name = ?)',
     (user_name, privilege_name)).fetchone()[0])
+
+#Get the user names of any previously registered administrator accounts
+def get_administrator_names() -> list[str]:
+  cursor = db.get().execute(
+    'SELECT user_name FROM user_privileges_view WHERE privilege_name = "admin"')
+  cursor.row_factory = lambda cur, row: row[0]
+  return cursor.fetchall()

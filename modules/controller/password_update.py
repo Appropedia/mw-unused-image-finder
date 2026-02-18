@@ -31,14 +31,15 @@ def view():
         return render_template('view/password_update.jinja.html')
 
       #Validate the current password
-      password_valid = users.authenticate(name = session['user_name'],
-                                          password = request.form['current_password'])[0]
+      password_valid, _ = users.authenticate(name = session['user_name'],
+                                             password = request.form['current_password'])
       if not password_valid:
         flash('Current password is incorrect.')
         return render_template('view/password_update.jinja.html')
 
       #Perform the password change now
-      users.update_password_and_status(session['user_name'], request.form['new_password'], 'active')
+      users.update_password_and_reset_status(session['user_name'], request.form['new_password'],
+                                             False)
 
       flash('Your password has been updated.')
       return redirect(url_for('default.view'))

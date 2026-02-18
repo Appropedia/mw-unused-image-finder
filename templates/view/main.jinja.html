@@ -73,11 +73,14 @@
     <h1> Settings </h1>
 
     <ul>
+      <li><a href="{{url_for('password_update.view')}}">
+        Update your password
+      </a></li>
       <li><a href="{{url_for('wikitext_template.handler')}}">
         Wikitext template
       </a></li>
-      <li><a href="{{url_for('password_update.view')}}">
-        Update your password
+      <li><a href="{{url_for('user_management.handle_all')}}">
+        User management
       </a></li>
     </ul>
 {#

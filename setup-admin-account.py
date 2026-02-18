@@ -30,7 +30,7 @@ if len(user_name) == 0:
   exit()
 
 #Check for user name availability
-if not users.name_available(user_name):
+if users.exists(user_name):
   print('A user under that name exists already')
   exit()
 
@@ -54,7 +54,7 @@ if validity_status != password_rules.Status.OK:
   exit()
 
 #Perform account creation now
-user_id = users.create(user_name, user_password, 'new_pass' if password_is_random else 'active')
+user_id = users.create(user_name, user_password, password_reset = password_is_random)
 privileges.create(user_id, 'admin')
 privileges.create(user_id, 'plan')
 privileges.create(user_id, 'review')

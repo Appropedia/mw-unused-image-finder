@@ -24,8 +24,8 @@ if validity_status != password_rules.Status.OK:
   print(validity_status.value)
   exit()
 
-#Update the password and status
-if users.update_password_and_status(args.user_name, new_password, 'new_pass'):
+#Update the password and reset status
+if users.update_password_and_reset_status(args.user_name, new_password, True):
   print(f'New password generated for {args.user_name}: {new_password}')
 else:
   print(f'No such user: {args.user_name}')

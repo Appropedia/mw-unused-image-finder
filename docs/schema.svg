@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="360.5mm"
-   height="195.5mm"
-   viewBox="0 0 360.5 195.5"
+   width="365.5mm"
+   height="190.5mm"
+   viewBox="0 0 365.5 190.5"
    version="1.1"
    id="svg1"
    inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
@@ -27,9 +27,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="true"
-     inkscape:zoom="0.93356449"
-     inkscape:cx="681.25985"
-     inkscape:cy="369.01575"
+     inkscape:zoom="0.76622746"
+     inkscape:cx="699.53118"
+     inkscape:cy="359.55381"
      inkscape:window-width="1920"
      inkscape:window-height="1008"
      inkscape:window-x="0"
@@ -40,7 +40,7 @@
     <inkscape:grid
        id="grid1"
        units="mm"
-       originx="25.250002"
+       originx="30.250001"
        originy="-4.7500009"
        spacingx="0.99999998"
        spacingy="1"
@@ -58,7 +58,7 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(25.250003,-4.7499996)">
+     transform="translate(30.250002,-4.7499996)">
     <g
        id="g168"
        transform="translate(105,170)">
@@ -117,7 +117,7 @@
     </g>
     <g
        id="g69"
-       transform="translate(-1.6063321e-5,4.9999999)">
+       transform="translate(-2.2410004e-5)">
       <g
          id="g68">
         <text
@@ -188,7 +188,7 @@
     </g>
     <g
        id="g44"
-       transform="translate(30.000001)">
+       transform="translate(30.000002,-5.0000014)">
       <g
          id="g43">
         <text
@@ -231,17 +231,12 @@
              style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;text-anchor:start;stroke-width:0.5"
              x="-52.781246"
              y="191.82982"
-             id="tspan154">  'audit', 'review',</tspan><tspan
-             sodipodi:role="line"
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;text-anchor:start;stroke-width:0.5"
-             x="-52.781246"
-             y="197.12149"
-             id="tspan184">  'plan') }</tspan></text>
+             id="tspan184">  'plan', 'review') }</tspan></text>
         <rect
            style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.499999;stroke-opacity:1"
            id="rect3-5-6-3"
            width="60"
-           height="45"
+           height="40"
            x="-55.000004"
            y="155" />
       </g>
@@ -402,7 +397,7 @@
     </g>
     <g
        id="g49"
-       transform="translate(30.000001)">
+       transform="translate(24.999997)">
       <g
          id="g45">
         <text
@@ -415,47 +410,42 @@
              id="tspan2-8-2"
              style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;text-anchor:start;stroke-width:0.5"
              x="-52.51009"
-             y="90.079849">id        integer PK</tspan><tspan
+             y="90.079849">id              integer PK</tspan><tspan
              sodipodi:role="line"
              style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;text-anchor:start;stroke-width:0.5"
              x="-52.51009"
              y="95.371513"
-             id="tspan6-9-2">name      text</tspan><tspan
+             id="tspan6-9-2">name            text</tspan><tspan
              sodipodi:role="line"
              style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;text-anchor:start;stroke-width:0.5"
              x="-52.51009"
              y="100.66318"
-             id="tspan11-0">password  text</tspan><tspan
+             id="tspan11-0">password        text</tspan><tspan
              sodipodi:role="line"
              style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;text-anchor:start;stroke-width:0.5"
              x="-52.51009"
              y="105.95483"
-             id="tspan12">status    text</tspan><tspan
+             id="tspan12">password_reset  boolean</tspan><tspan
              sodipodi:role="line"
              style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;text-anchor:start;stroke-width:0.5"
              x="-52.51009"
              y="111.2465"
-             id="tspan13" /><tspan
+             id="tspan28">ban_status      boolean</tspan><tspan
              sodipodi:role="line"
              style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;text-anchor:start;stroke-width:0.5"
              x="-52.51009"
              y="116.53816"
-             id="tspan14">{ unique(name) }</tspan><tspan
+             id="tspan13" /><tspan
              sodipodi:role="line"
              style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;text-anchor:start;stroke-width:0.5"
              x="-52.51009"
              y="121.82982"
-             id="tspan15">{ status in ('new_pass',</tspan><tspan
-             sodipodi:role="line"
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;text-anchor:start;stroke-width:0.5"
-             x="-52.51009"
-             y="127.12148"
-             id="tspan16">  'active', 'banned') }</tspan></text>
+             id="tspan16">{ unique(name) }</tspan></text>
         <rect
            style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.499999;stroke-opacity:1"
            id="rect3-7-61"
-           width="65.000008"
-           height="44.999996"
+           width="70"
+           height="40"
            x="-55"
            y="85" />
       </g>
@@ -476,8 +466,8 @@
         <rect
            style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.499999;stroke-opacity:1"
            id="rect4-2-9"
-           width="65.000008"
-           height="9.9999981"
+           width="70"
+           height="9.999999"
            x="140"
            y="55" />
       </g>
@@ -660,7 +650,7 @@
     </g>
     <g
        id="g3"
-       transform="translate(-4.9999991)">
+       transform="translate(-4.9999991,-5.0000014)">
       <g
          id="g2">
         <text
@@ -1029,13 +1019,13 @@
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;line-height:0;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.5;stroke-dasharray:none;stroke-opacity:1"
        x="316"
-       y="179"
+       y="174"
        id="text61-2-8"><tspan
          sodipodi:role="line"
          id="tspan61-5-9"
          style="font-size:4.23333px;text-align:start;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.5;stroke-dasharray:none"
          x="316"
-         y="179">0..*</tspan></text>
+         y="174">0..*</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;line-height:0;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.5;stroke-dasharray:none;stroke-opacity:1"
@@ -1062,13 +1052,13 @@
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;line-height:0;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.5;stroke-dasharray:none;stroke-opacity:1"
        x="316"
-       y="194"
+       y="189"
        id="text61-2-9"><tspan
          sodipodi:role="line"
          id="tspan61-5-5"
          style="font-size:4.23333px;text-align:start;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.5;stroke-dasharray:none"
          x="316"
-         y="194">0..*</tspan></text>
+         y="189">0..*</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;line-height:0;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.499999;stroke-dasharray:none;stroke-opacity:1"
@@ -1189,30 +1179,30 @@
          y="94">0..*</tspan></text>
     <path
        style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.499999;stroke-dasharray:none;stroke-opacity:1"
-       d="m 4.9999991,130 v 15"
+       d="m 5.0000004,125 v 15"
        id="path147" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;line-height:0;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.499999;stroke-dasharray:none;stroke-opacity:1"
-       x="5.9999995"
-       y="134"
+       x="6.000001"
+       y="129"
        id="text148"><tspan
          sodipodi:role="line"
          id="tspan148"
          style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.5;stroke-opacity:1"
-         x="5.9999995"
-         y="134">1</tspan></text>
+         x="6.000001"
+         y="129">1</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;line-height:0;font-family:'Adwaita Mono';-inkscape-font-specification:'Adwaita Mono';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.499999;stroke-dasharray:none;stroke-opacity:1"
-       x="5.9999995"
-       y="144"
+       x="6.000001"
+       y="139"
        id="text149"><tspan
          sodipodi:role="line"
          id="tspan149"
          style="stroke-width:0.5"
-         x="5.9999995"
-         y="144">0..*</tspan></text>
+         x="6.000001"
+         y="139">0..*</tspan></text>
     <g
        id="g30">
       <g
@@ -1355,12 +1345,12 @@
     </g>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.499999;stroke-opacity:1"
-       d="m 315,130 h 15 v 45 h -14.99998"
+       d="m 315,130 h 15 l -10e-6,40 h -14.99998"
        id="path55"
        sodipodi:nodetypes="cccc" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.499999;stroke-opacity:1"
-       d="M 315.00002,79.999999 H 335 V 190 h -19.99998"
+       d="M 315.00002,79.999999 H 335 L 334.99999,185 h -19.99998"
        id="path56"
        sodipodi:nodetypes="cccc" />
   </g>
