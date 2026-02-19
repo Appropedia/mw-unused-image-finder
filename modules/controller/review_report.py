@@ -8,7 +8,7 @@ blueprint = Blueprint('review_report', __name__)
 
 #Route handler for the review report view
 @blueprint.route('/review_report')
-@session_control.login_required
+@session_control.login_required()
 def view():
   #Create a dictionary with the available request filters and their valid values, if applicable
   available_filters = {

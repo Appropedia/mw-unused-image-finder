@@ -10,7 +10,7 @@ WIKITEXT_MAX_LEN = 1024
 
 #Route handler for the wikitext template view
 @blueprint.route('/wikitext_template', methods = ['GET', 'PATCH'])
-@session_control.login_required
+@session_control.login_required('plan')
 def handler() -> str:
   #Call the corresponding method handler
   match request.method:

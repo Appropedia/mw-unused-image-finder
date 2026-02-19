@@ -16,7 +16,7 @@ WIKITEXT_MAX_LEN = 256
 
 #Route handler for the cleanup actions table
 @blueprint.route('/cleanup_action', methods = ['GET', 'POST'])
-@session_control.login_required
+@session_control.login_required('plan')
 def handle_all() -> str:
   #Call the corresponding method handler
   match request.method:
@@ -25,7 +25,7 @@ def handle_all() -> str:
 
 #Route handler for specific cleanup actions
 @blueprint.route('/cleanup_action/<action>', methods = ['GET', 'PATCH', 'DELETE'])
-@session_control.login_required
+@session_control.login_required('plan')
 def handle_single(action: str) -> str:
   action = _url_decode(action)
 
@@ -37,7 +37,7 @@ def handle_single(action: str) -> str:
 
 #Route handler for reasons linked to actions
 @blueprint.route('/cleanup_action/<action>/reason_link/<reason>', methods = ['PATCH'])
-@session_control.login_required
+@session_control.login_required('plan')
 def handle_reason(action: str, reason: str) -> str:
   action = _url_decode(action)
   reason = _url_decode(reason)
@@ -45,7 +45,7 @@ def handle_reason(action: str, reason: str) -> str:
 
 #Route handler for wikitext liked to actions
 @blueprint.route('/cleanup_action/<action>/wikitext/<category>', methods = ['PATCH'])
-@session_control.login_required
+@session_control.login_required('plan')
 def handle_wikitext(action: str, category: str) -> str:
   action = _url_decode(action)
   return _update_wikitext(action, category)

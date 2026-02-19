@@ -14,7 +14,7 @@ WIKITEXT_MAX_LEN = 256
 
 #Route handler for the cleanup reasons table
 @blueprint.route('/cleanup_reason', methods = ['GET', 'POST'])
-@session_control.login_required
+@session_control.login_required('plan')
 def handle_all() -> str:
   #Call the corresponding method handler
   match request.method:
@@ -23,7 +23,7 @@ def handle_all() -> str:
 
 #Route handler for specific cleanup reasons
 @blueprint.route('/cleanup_reason/<reason>', methods = ['GET', 'PATCH', 'DELETE'])
-@session_control.login_required
+@session_control.login_required('plan')
 def handle_single(reason: str) -> str:
   reason = _url_decode(reason)
 
@@ -35,7 +35,7 @@ def handle_single(reason: str) -> str:
 
 #Route handler for wikitext liked to reasons
 @blueprint.route('/cleanup_reason/<reason>/wikitext', methods = ['PATCH'])
-@session_control.login_required
+@session_control.login_required('plan')
 def handle_wikitext(reason: str) -> str:
   reason = _url_decode(reason)
   return _update_wikitext(reason)

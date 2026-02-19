@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from flask import Blueprint, session, redirect, url_for, request, render_template, abort, flash, g
-from modules.model.table import users
+from modules.model.table import users, privileges
+from modules.model.view import user_privileges
 
 blueprint = Blueprint('session_control', __name__)
 
@@ -41,17 +42,26 @@ def logout():
   session.pop('user_name', None)
   return redirect(url_for('session_control.login'))
 
-_route_handlers = []  #List of route handlers that require an active user session
+_route_handler_privileges = {}  #Dictionary of user privileges required by each route handler
 
-#Function decorator for registering route handlers that require an active user session
-def login_required(func: Callable):
-  _route_handlers.append(func)
-  return func
+#Function decorator for registering route handlers that require an active user session with specific
+#user privileges
+def login_required(*required_privileges: str):
+  #Make sure every privilege is valid
+  invalid_privileges = tuple(p for p in required_privileges if p not in privileges.VALID_PRIVILEGES)
+  if invalid_privileges:
+    raise ValueError(f'Invalid privilege: "{invalid_privileges[0]}"')
 
-#Check for an active user session when a route handler is about to be called, redirecting to the
-#login view when needed
+  def wrapper(route_handler: Callable):
+    _route_handler_privileges[route_handler] = required_privileges
+    return route_handler
+
+  return wrapper
+
+#Check for an active user session when a route handler is about to be called, enforcing required
+#privileges and redirecting to the login view when needed
 def check(request_endpoint, route_handler: Callable):
-  if route_handler not in _route_handlers:
+  if route_handler not in _route_handler_privileges:
     #The route handler doesnt require login, proceed with the request
     return
 
@@ -66,6 +76,13 @@ def check(request_endpoint, route_handler: Callable):
     #Invalid or banned account, drop the session immediately
     session.pop('user_name', None)
     abort(401)
+
+  #Also store the user privileges in the global context
+  g.user_privileges = user_privileges.get(session['user_name'])
+
+  #Make sure the user has all the privileges required by the route handler (if any)
+  if any(p not in g.user_privileges for p in _route_handler_privileges[route_handler]):
+    abort(403)
 
   if password_reset:
     #The account has a new generated password, prompt for password update

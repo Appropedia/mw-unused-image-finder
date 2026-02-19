@@ -44,13 +44,13 @@ STATUS_LABEL = lambda user: 'Banned' if user['ban_status'] else \
 
 #Route handler for the main user management view
 @blueprint.route('/user_management')
-@session_control.login_required
+@session_control.login_required('admin')
 def handle_all() -> str:
   return _read_all()
 
 #Route handler for specific user account modification actions
 @blueprint.route('/user_management/user/<user_name>', methods = ['PATCH', 'DELETE'])
-@session_control.login_required
+@session_control.login_required('admin')
 def handle_single(user_name: str) -> str:
   user_name = _url_decode(user_name)
 
@@ -61,7 +61,7 @@ def handle_single(user_name: str) -> str:
 
 #Route handler for the user creation form
 @blueprint.route('/user_management/create_user', methods = ['GET', 'POST'])
-@session_control.login_required
+@session_control.login_required('admin')
 def create_user():
   match request.method:
     case 'GET': return _create_user_form()
@@ -69,7 +69,7 @@ def create_user():
 
 #Route handler for the user password reset form
 @blueprint.route('/user_management/password_reset', methods = ['GET', 'POST'])
-@session_control.login_required
+@session_control.login_required('admin')
 def password_reset():
   match request.method:
     case 'GET': return _password_reset_form()

@@ -21,7 +21,7 @@ config.register({
 
 #Route handler for the image dealer view
 @blueprint.route('/image_review')
-@session_control.login_required
+@session_control.login_required('review')
 def deal():
   #Read and validate request arguments
   prev_image = request.args.get('prev_image', None)
@@ -47,7 +47,7 @@ def deal():
 
 #Route handler for the image review view
 @blueprint.route('/image_review/<image_title>', methods = ['GET', 'PUT'])
-@session_control.login_required
+@session_control.login_required('review')
 def handle_review(image_title: str):
   #Call the corresponding method handler
   match request.method:

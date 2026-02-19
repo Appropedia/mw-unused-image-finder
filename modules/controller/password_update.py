@@ -7,7 +7,7 @@ blueprint = Blueprint('password_update', __name__)
 
 #Route handler for the password update view
 @blueprint.route('/password_update', methods = ['GET', 'POST'])
-@session_control.login_required
+@session_control.login_required()
 def view():
   match request.method:
     case 'GET':
