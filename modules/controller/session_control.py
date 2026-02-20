@@ -6,47 +6,47 @@ from modules.model.view import user_privileges
 blueprint = Blueprint('session_control', __name__)
 
 #Route handler for the login view
-@blueprint.route('/login', methods = ['GET', 'POST'])
-def login():
+@blueprint.get('/login')
+def login_get():
   if 'user_name' in session:
-    return redirect(url_for('default.view'))
+    return redirect(url_for('default.view_get'))
 
-  match request.method:
-    case 'GET':
-      return render_template('view/login.jinja.html')
-    case  'POST':
-      #Make sure all form fields are provided
-      if 'user_name' not in request.form or \
-         'user_password' not in request.form:
-        abort(400)
+  return render_template('view/login.jinja.html')
 
-      #Authenticate the user now
-      password_valid, ban_status = users.authenticate(name = request.form['user_name'],
-                                                      password = request.form['user_password'])
+#Route handler for login requests
+@blueprint.post('/login')
+def login_post():
+  #Make sure all form fields are provided
+  if 'user_name' not in request.form or 'user_password' not in request.form:
+    abort(400)
 
-      if not password_valid:
-        flash('Invalid user credentials.')
-        return render_template('view/login.jinja.html')
+  #Authenticate the user now
+  password_valid, ban_status = users.authenticate(name = request.form['user_name'],
+                                                  password = request.form['user_password'])
 
-      if ban_status:
-        flash('Your account has been banned. Please contact your site administrator for details.')
-        return render_template('view/login.jinja.html')
+  if not password_valid:
+    flash('Invalid user credentials.')
+    return render_template('view/login.jinja.html')
 
-      #Set the session status to active and redirect to the default view
-      session['user_name'] = request.form['user_name']
-      return redirect(url_for('default.view'))
+  if ban_status:
+    flash('Your account has been banned. Please contact your site administrator for details.')
+    return render_template('view/login.jinja.html')
+
+  #Set the session status to active and redirect to the default view
+  session['user_name'] = request.form['user_name']
+  return redirect(url_for('default.view_get'))
 
 #Route handler for the logout action
-@blueprint.route('/logout')
-def logout():
+@blueprint.get('/logout')
+def logout_get():
   session.pop('user_name', None)
-  return redirect(url_for('session_control.login'))
+  return redirect(url_for('session_control.login_get'))
 
 _route_handler_privileges = {}  #Dictionary of user privileges required by each route handler
 
 #Function decorator for registering route handlers that require an active user session with specific
 #user privileges
-def login_required(*required_privileges: str):
+def login_required(*required_privileges: str) -> Callable:
   #Make sure every privilege is valid
   invalid_privileges = tuple(p for p in required_privileges if p not in privileges.VALID_PRIVILEGES)
   if invalid_privileges:
@@ -65,9 +65,14 @@ def check(request_endpoint, route_handler: Callable):
     #The route handler doesnt require login, proceed with the request
     return
 
+  #The route handler requires login, make sure the user has a valid session
   if 'user_name' not in session:
-    #Login required and user not logged in, redirect to login view
-    return redirect(url_for('session_control.login'))
+    if request.method == 'GET':
+      #No valid session while attempting to 'GET' the view, redirect to the login view instead
+      return redirect(url_for('session_control.login_get'))
+    else:
+      #Forbid any other method
+      abort(401)
 
   #User is logged in, store the user id in the global context
   g.user_id, password_reset, ban_status = users.read_id_status(session['user_name'])

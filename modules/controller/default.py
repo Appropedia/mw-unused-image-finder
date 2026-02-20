@@ -4,7 +4,7 @@ from modules.controller import session_control
 blueprint = Blueprint('default', __name__)
 
 #Route handler for the default view
-@blueprint.route('/')
+@blueprint.get('/')
 @session_control.login_required()
-def view():
+def view_get() -> str:
   return render_template('view/main.jinja.html')

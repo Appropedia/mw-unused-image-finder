@@ -11,7 +11,7 @@
   {% if session['user_name'] %}
     {{session['user_name']}}
   {% endif %}
-    <a href="{{url_for('session_control.logout')}}">Log out</a>
+    <a href="{{url_for('session_control.logout_get')}}">Log out</a>
   </div>
 </div>
 <hr>

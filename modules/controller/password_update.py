@@ -42,4 +42,4 @@ def view():
                                              False)
 
       flash('Your password has been updated.')
-      return redirect(url_for('default.view'))
+      return redirect(url_for('default.view_get'))

@@ -5,9 +5,9 @@ from modules.model.table import images
 blueprint = Blueprint('file_search', __name__)
 
 #Route handler for the image dealer view
-@blueprint.route('/file_search')
+@blueprint.get('/file_search')
 @session_control.login_required()
-def view():
+def view_get() -> str:
   #Validate and get the limit and offset request parameters
   limit, offset = _validate_request_range()
 
