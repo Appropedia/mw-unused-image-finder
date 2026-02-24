@@ -16,12 +16,6 @@ def get(user_name: str) -> list[str]:
   cursor.row_factory = lambda cur, row: row[0]
   return cursor.fetchall()
 
-#Check whether a specific user has a given privilege
-def check(user_name: str, privilege_name: str) -> bool:
-  return bool(db.get().execute(
-    'SELECT EXISTS (SELECT 1 FROM user_privileges_view WHERE user_name = ? AND privilege_name = ?)',
-    (user_name, privilege_name)).fetchone()[0])
-
 #Get the user names of any previously registered administrator accounts
 def get_administrator_names() -> list[str]:
   cursor = db.get().execute(

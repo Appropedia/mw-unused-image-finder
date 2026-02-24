@@ -7,11 +7,12 @@
     <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
   </head>
   <body>
-    {{top_bar('Back to user management', 'user_management.handle_all') | indent(4)}}
+    {{top_bar('Back to user management', 'user_management.user_management_get') | indent(4)}}
     <h1> Create new user account </h1>
     <p> You can create new user accounts here. </p>
     <p> Remember to use a private channel in order to communicate the generated password. </p>
-    <form method="POST">
+    <form id="user_creation_form" action="{{url_for('user_management.user_post')}}"
+     data-method="POST">
       <div>
         <label for="user_name">User name:</label>
         <input id="user_name" name="user_name" required>
@@ -29,13 +30,30 @@
         <button type="submit">Create account</button>
       </div>
     </form>
-{% for category, message in get_flashed_messages(True) %}
-  {% if category == 'error' %}
-    <p style="color: red;">{{message}}</p>
-  {% else %}
-    <p>{{message}}</p>
-  {% endif %}
-{% endfor %}
+    <style>
+      div.form_submit_result.success { color: initial; }
+      div.form_submit_result.error { color: red; }
+    </style>
+    <div id="form_submit_result" class="form_submit_result"></div>
+    <script type="module">
+      import { register_submit_listener }
+      from {{url_for('static', filename = 'simple_form_listener.js') | tojson}};
+
+      const messages = {
+        'FIELD_CONFLICT,user_name': 'A user under that name exists already',
+      };
+
+      function form_submit_callback(success, response_text) {
+        if (!success) return messages[response_text];
+
+        const { user_name, new_password } = JSON.parse(response_text);
+        return `New account created for user ${user_name} with temporary password: ${new_password}`
+      }
+
+      register_submit_listener(document.getElementById('user_creation_form'),
+                               document.getElementById('form_submit_result'),
+                               { callback: form_submit_callback });
+    </script>
     <h2> Privilege description </h2>
     <ul>
 {% for privilege_name, rights in privilege_description.items() %}

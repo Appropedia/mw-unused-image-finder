@@ -83,16 +83,18 @@ def _read_all() -> str:
       ),
       'rows': tuple({
         'cells': (
-          { 'value': name,
-            'link_url': url_for('cleanup_reason.handle_single', reason = _url_encode(name)) },
+          { 'value': name, 'link_url': reason_url },
           { 'value': description },
         ),
         'actions': {
           'allow_update': True,
+          'update_url': reason_url,
           'allow_delete': True,
-          'form_url': url_for('cleanup_reason.handle_single', reason = _url_encode(name)),
+          'delete_url': reason_url,
         },
-      } for name, description in cleanup_reasons.read_name_description_all()),
+      } for name, description in cleanup_reasons.read_name_description_all()
+        for reason_url in (url_for('cleanup_reason.handle_single', reason = _url_encode(name)),)),
+      'create_url': url_for('cleanup_reason.handle_all'),
     },
   }
 

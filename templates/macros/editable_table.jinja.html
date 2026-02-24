@@ -48,7 +48,7 @@
     #}
 <form id="row_{{row_index}}_update_form" style="display: inline-block;">
   <button id="row_{{row_index}}_edit_button" type="button">Edit</button>
-  <button id="row_{{row_index}}_update_button" type="submit" formaction="{{actions['form_url']}}"
+  <button id="row_{{row_index}}_update_button" type="submit" formaction="{{actions['update_url']}}"
    data-method="PATCH" hidden>Update</button>
 </form>
 <script type="module">
@@ -63,7 +63,7 @@
       If deletion is allowed, create a minimal form and register a submit listener for this row
     #}
 <form id="row_{{row_index}}_delete_form" style="display: inline-block;">
-  <button type="submit" formaction="{{actions['form_url']}}" data-method="DELETE"
+  <button type="submit" formaction="{{actions['delete_url']}}" data-method="DELETE"
    data-warning='{{actions.get("delete_warning", None) | tojson}}'>
     Delete
   </button>
@@ -80,7 +80,7 @@
     #}
 <form id="row_{{row_index}}_action_form" style="display: inline-block;">
     {% for button in actions['buttons'] %}
-  <button type="submit" formaction="{{actions['form_url']}}" data-method="{{button['method']}}"
+  <button type="submit" formaction="{{button['url']}}" data-method="{{button['method']}}"
    name="{{button['name']}}" value="{{button['value']}}"
    data-warning='{{button.get("warning", None) | tojson}}'>
     {{button['label']}}
@@ -95,7 +95,7 @@
   {% endif %}
 {% endmacro %}
 
-{% macro data_input_row(table_fields) %}
+{% macro data_input_row(table_fields, create_url) %}
   {% for field in table_fields %}
 <td>
     {% if field['allow_create'] %}
@@ -108,7 +108,7 @@
   {% endfor %}
 <td>
   <form id="row_creation_form">
-    <button type="submit" formaction="{{request.path}}" data-method="POST">Create</button>
+    <button type="submit" formaction="{{create_url}}" data-method="POST">Create</button>
   </form>
   <script type="module">
     import { register_submit_listener }
@@ -158,7 +158,8 @@
     data
   #}
   <tr>
-    {{data_input_row(table_descriptor['fields']) | trim | indent(4)}}
+    {{data_input_row(table_descriptor['fields'],
+                     table_descriptor['create_url']) | trim | indent(4)}}
   </tr>
 {% endif %}
 </table>

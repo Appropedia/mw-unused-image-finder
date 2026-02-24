@@ -1,4 +1,8 @@
 {% macro wikitext_form(action_url, category, maxlen, rows, cols, content) %}
+<style>
+  span.{{category}}_submit_result.success { color: initial; }
+  span.{{category}}_submit_result.error { color: red; }
+</style>
 <div style="width: fit-content">
   <form id="{{category}}_form" action="{{action_url}}" data-method="PATCH">
     <div>
@@ -7,17 +11,20 @@
     </div>
     <div style="display: flex; justify-content: space-between">
       <button type="submit">Save</button>
-      <span id="{{category}}_submit_result"></span>
+      <span id="{{category}}_submit_result" class="{{category}}_submit_result"></span>
     </div>
   </form>
 </div>
 <script type="module">
   import { register_submit_listener }
-  from {{url_for('static', filename = 'wikitext_form.js') | tojson}};
+  from {{url_for('static', filename = 'simple_form_listener.js') | tojson}};
 
   const textarea = document.getElementById({{(category + '_textarea') | tojson}});
   textarea.value = {{content | tojson }};
   register_submit_listener(document.getElementById({{(category + '_form') | tojson}}),
-                           document.getElementById({{(category + '_submit_result') | tojson}}));
+                           document.getElementById({{(category + '_submit_result') | tojson}}),
+                           { fade: true,
+                             callback: (success, response_text) => success? 'Wikitext saved!':
+                                                                            response_text });
 </script>
 {%- endmacro %}

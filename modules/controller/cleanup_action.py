@@ -95,30 +95,34 @@ def _read_all() -> str:
       ),
       'rows': tuple({
         'cells': (
-          { 'value': name,
-            'link_url': url_for('cleanup_action.handle_single', action = _url_encode(name)) },
+          { 'value': name, 'link_url': action_url },
           { 'value': description },
         ),
         'actions': {
           'allow_update': True,
+          'update_url': action_url,
           'allow_delete': True,
-          'form_url': url_for('cleanup_action.handle_single', action = _url_encode(name)),
+          'delete_url': action_url,
           'buttons': (
             *(({
               'name': 'move_position',
               'label': Markup('&uarr;'),
               'value': 'backward',
+              'url': action_url,
               'method': 'PATCH',
             },) if index > 0 else ()),
             *(({
               'name': 'move_position',
               'label': Markup('&darr;'),
               'value': 'forward',
+              'url': action_url,
               'method': 'PATCH',
             },) if index < len(name_description_list) - 1 else ()),
           ),
         },
-      } for index, (name, description) in enumerate(name_description_list)),
+      } for index, (name, description) in enumerate(name_description_list)
+        for action_url in (url_for('cleanup_action.handle_single', action = _url_encode(name)),)),
+      'create_url': url_for('cleanup_action.handle_all'),
     },
   }
 
@@ -167,35 +171,39 @@ def _read_single(action: str) -> str:
           { 'value': reason_description },
         ),
         'actions': {
-          'form_url': url_for('cleanup_action.handle_reason', action = _url_encode(action),
-                                                              reason = _url_encode(reason)),
           'buttons': (
             *(({
               'name': 'valid_choice',
               'label': 'Disallow',
               'value': '0',
+              'url': reason_url,
               'method': 'PATCH',
             },) if is_linked else ({
               'name': 'valid_choice',
               'label': 'Allow',
               'value': '1',
+              'url': reason_url,
               'method': 'PATCH',
             },)),
             *(({
               'name': 'move_position',
               'label': Markup('&uarr;'),
               'value': 'backward',
+              'url': reason_url,
               'method': 'PATCH',
             },) if index > 0 and index < link_count else ()),
             *(({
               'name': 'move_position',
               'label': Markup('&darr;'),
               'value': 'forward',
+              'url': reason_url,
               'method': 'PATCH',
             },) if index < len(cleanup_reasons) - 1 and index < link_count - 1 else ()),
           ),
         },
-      } for index, (is_linked, reason, reason_description) in enumerate(cleanup_reasons)),
+      } for index, (is_linked, reason, reason_description) in enumerate(cleanup_reasons)
+        for reason_url in (url_for('cleanup_action.handle_reason', action = _url_encode(action),
+                                                                   reason = _url_encode(reason)),)),
     },
     'WIKITEXT_MAX_LEN': WIKITEXT_MAX_LEN,
     'individual_wikitext': wikitext_contents['individual'],

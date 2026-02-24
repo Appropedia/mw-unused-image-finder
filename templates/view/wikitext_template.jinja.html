@@ -13,7 +13,7 @@
     <p>
       Here you can modify the wikitext template contents for the Mediawiki bot
     </p>
-    {{wikitext_form(action_url = url_for('wikitext_template.handler'), category = 'wikitext',
+    {{wikitext_form(action_url = url_for('wikitext_template.content_patch'), category = 'wikitext',
                     maxlen = WIKITEXT_MAX_LEN, rows = 20, cols = 128, content = wikitext) |
       indent(4) }}
     The bot accepts specific wikitext extensions, which are detailed

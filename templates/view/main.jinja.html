@@ -66,16 +66,16 @@
       <li><a href="{{url_for('cleanup_reason.handle_all')}}">
         Cleanup reasons
       </a></li>
-      <li><a href="{{url_for('wikitext_template.handler')}}">
+      <li><a href="{{url_for('wikitext_template.view_get')}}">
         Wikitext template
       </a></li>
     </ul>
     <h1> Settings </h1>
     <ul>
-      <li><a href="{{url_for('password_update.view')}}">
+      <li><a href="{{url_for('user_management.password_update_get')}}">
         Update your password
       </a></li>
-      <li><a href="{{url_for('user_management.handle_all')}}">
+      <li><a href="{{url_for('user_management.user_management_get')}}">
         User management
       </a></li>
     </ul>
@@ -84,9 +84,6 @@
     - Unused files: [a] out of [A]
     - Older revisions: [b] out of [B]
 #}
-{% for message in get_flashed_messages() %}
-    <div style="color: red;">{{message}}</div>
-{% endfor %}
   </body>
 </html>
 

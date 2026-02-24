@@ -8,15 +8,6 @@ blueprint = Blueprint('wikitext_template', __name__)
 #Field size limits
 WIKITEXT_MAX_LEN = 1024
 
-#Route handler for the wikitext template view
-@blueprint.route('/wikitext_template', methods = ['GET', 'PATCH'])
-@session_control.login_required('plan')
-def handler() -> str:
-  #Call the corresponding method handler
-  match request.method:
-    case 'GET':  return _read()
-    case 'PATCH': return _update()
-
 #Error handler for this blueprint
 @blueprint.errorhandler(HTTPException)
 def request_failed(e: HTTPException) -> tuple[str, int] | HTTPException:
@@ -29,8 +20,10 @@ def request_failed(e: HTTPException) -> tuple[str, int] | HTTPException:
     #intended to be handled by frontend scripts
     return e.description, e.code
 
-#Read method handler for the wikitext template view
-def _read() -> str:
+#Route handler for the wikitext template view
+@blueprint.get('/wikitext_template')
+@session_control.login_required('plan')
+def view_get() -> str:
   #Prepare the render parameters and render the template
   render_params = {
     'WIKITEXT_MAX_LEN': WIKITEXT_MAX_LEN,
@@ -39,8 +32,10 @@ def _read() -> str:
 
   return render_template('view/wikitext_template.jinja.html', **render_params)
 
-#Process a wikitext template write request
-def _update() -> str:
+#Route handler for updating the wikitext template
+@blueprint.patch('/wikitext_template')
+@session_control.login_required('plan')
+def content_patch() -> str:
   _validate_wikitext()
   wikitext = request.form['wikitext']
   status = wikitext_table.write_template(wikitext if wikitext != '' else None)

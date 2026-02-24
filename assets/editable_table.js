@@ -107,7 +107,7 @@ export function register_submit_listener(form, confirm_message) {
           break;
         default:
           //The response could not be characterized, show it verbatim instead
-          response_msg.innerHTML = response_text;
+          response_msg.textContent = response_text;
           break;
       }
     }

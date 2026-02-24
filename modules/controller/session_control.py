@@ -91,7 +91,8 @@ def check(request_endpoint, route_handler: Callable):
 
   if password_reset:
     #The account has a new generated password, prompt for password update
-    if request_endpoint != 'password_update.view':
-      return redirect(url_for('password_update.view'))
+    if request_endpoint not in ('user_management.password_update_get',
+                                'user_management.user_password_udpate_patch'):
+      return redirect(url_for('user_management.password_update_get'))
     else:
       g.user_password_reset = True
