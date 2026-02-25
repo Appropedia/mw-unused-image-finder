@@ -7,7 +7,7 @@
     <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
   </head>
   <body>
-    {{top_bar('Back to main', 'default.view_get') | indent(4)}}
+    {{top_bar('Back to main', 'default.get') | indent(4)}}
     <h1>Wikitext Help</h1>
     <h2>Magic words</h2>
     <p>
@@ -196,7 +196,7 @@
     </ul>
     <h2>Example template</h2>
     Here's a readily made template that shows the basic functionality of the bot. You can copy it
-    directly to the <a href="{{url_for('wikitext_template.view_get')}}">wikitext template page</a>:
+    directly to the <a href="{{url_for('wikitext_template.get')}}">wikitext template page</a>:
     <pre style="border: 1px solid black; width: fit-content;"><code>{{
 '''This image has been reviewed by {{REVIEWAUTHOR}} at {{#time:r|{{REVIEWTIMESTAMP}}}}
 

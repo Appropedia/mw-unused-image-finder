@@ -6,5 +6,5 @@ blueprint = Blueprint('default', __name__)
 #Route handler for the default view
 @blueprint.get('/')
 @session_control.login_required()
-def view_get() -> str:
+def get() -> str:
   return render_template('view/main.jinja.html')

@@ -9,7 +9,7 @@ blueprint = Blueprint('session_control', __name__)
 @blueprint.get('/login')
 def login_get():
   if 'user_name' in session:
-    return redirect(url_for('default.view_get'))
+    return redirect(url_for('default.get'))
 
   return render_template('view/login.jinja.html')
 
@@ -34,7 +34,7 @@ def login_post():
 
   #Set the session status to active and redirect to the default view
   session['user_name'] = request.form['user_name']
-  return redirect(url_for('default.view_get'))
+  return redirect(url_for('default.get'))
 
 #Route handler for the logout action
 @blueprint.get('/logout')

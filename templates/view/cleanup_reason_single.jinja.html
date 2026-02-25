@@ -8,7 +8,7 @@
     <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
   </head>
   <body>
-    {{top_bar('Back to cleanup reasons', 'cleanup_reason.handle_all') | indent(4)}}
+    {{top_bar('Back to cleanup reasons', 'cleanup_reason.view_all_get') | indent(4)}}
     <h1> Cleanup reason: {{reason_name}} </h1>
     <p> Description: {{description}} </p>
 {% if cleanup_actions %}
@@ -23,17 +23,17 @@
 {% endif %}
     <p>
       You can manage all reasons associated to actions from
-      <a href="{{url_for('cleanup_action.handle_all')}}"> here </a>
+      <a href="{{url_for('cleanup_action.view_all_get')}}"> here </a>
     </p>
     <h2> Distinct reason wikitext </h2>
     <p>
       You can set the contents of the <code>%%TEXT%%</code> token for the
-      <a href="{{url_for('help_page.view_get', page = 'wikitext', _anchor ='#distinctreasons')}}">
+      <a href="{{url_for('help_page.get', page = 'wikitext', _anchor ='#distinctreasons')}}">
       <code>#distinctreasons</code></a> parser function here. This is intended to appear just once
       if this reason is selected in a review and can be used to specify categories if needed.
     </p>
-    {{wikitext_form(action_url = url_for('cleanup_reason.handle_wikitext', reason = reason_name),
-                    category = 'distinct_wikitext', maxlen = WIKITEXT_MAX_LEN, rows = 4, cols = 64,
-                    content = distinct_wikitext) | indent(4) }}
+    {{wikitext_form(action_url = distinct_wikitext_url, category = 'distinct_wikitext',
+                    maxlen = WIKITEXT_MAX_LEN, rows = 4, cols = 64,
+                    content = distinct_wikitext_content) | indent(4) }}
   </body>
 </html>

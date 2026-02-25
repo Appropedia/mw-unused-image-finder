@@ -7,7 +7,7 @@ blueprint = Blueprint('help_page', __name__)
 #Route handler for the help page view
 @blueprint.get('/help/<page>')
 @session_control.login_required()
-def view_get(page) -> str:
+def get(page) -> str:
   #Make sure the requested help page is valid
   help_pages = ('wikitext',)
 

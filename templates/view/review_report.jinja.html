@@ -19,7 +19,7 @@
     </style>
   </head>
   <body>
-    {{top_bar('Back to main', 'default.view_get') | indent(4)}}
+    {{top_bar('Back to main', 'default.get') | indent(4)}}
     <h1> Review report </h1>
     <p>
       All submitted reviews are listed here
@@ -146,11 +146,11 @@
     </div>
     <p>
       Download the full review data (including all pages) as
-      <a href="{{url_for('review_report.view_get', format = 'json', **filter_params)}}" download>
+      <a href="{{url_for('review_report.get', format = 'json', **filter_params)}}" download>
         json
       </a>
       or
-      <a href="{{url_for('review_report.view_get', format = 'csv', **filter_params)}}" download>
+      <a href="{{url_for('review_report.get', format = 'csv', **filter_params)}}" download>
         csv
       </a>
     </p>

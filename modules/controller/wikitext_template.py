@@ -23,7 +23,7 @@ def request_failed(e: HTTPException) -> tuple[str, int] | HTTPException:
 #Route handler for the wikitext template view
 @blueprint.get('/wikitext_template')
 @session_control.login_required('plan')
-def view_get() -> str:
+def get() -> str:
   #Prepare the render parameters and render the template
   render_params = {
     'WIKITEXT_MAX_LEN': WIKITEXT_MAX_LEN,
@@ -35,7 +35,7 @@ def view_get() -> str:
 #Route handler for updating the wikitext template
 @blueprint.patch('/wikitext_template')
 @session_control.login_required('plan')
-def content_patch() -> str:
+def patch() -> str:
   _validate_wikitext()
   wikitext = request.form['wikitext']
   status = wikitext_table.write_template(wikitext if wikitext != '' else None)

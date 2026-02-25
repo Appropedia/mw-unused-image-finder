@@ -9,7 +9,7 @@
     <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
   </head>
   <body>
-    {{top_bar('Back to cleanup actions', 'cleanup_action.handle_all') | indent(4)}}
+    {{top_bar('Back to cleanup actions', 'cleanup_action.view_all_get') | indent(4)}}
     <h1> Cleanup action: {{action_name}} </h1>
     <p> Description: {{description}} </p>
     <h2> Valid reasons </h2>
@@ -20,36 +20,33 @@
     <h2> Individual action wikitext </h2>
     <p>
       You can set the contents of the <code>%%TEXT%%</code> token for the
-      <a href="{{url_for('help_page.view_get', page = 'wikitext', _anchor ='#individualactions')}}">
+      <a href="{{url_for('help_page.get', page = 'wikitext', _anchor ='#individualactions')}}">
       <code>#individualactions</code></a> parser function here. This is intended to appear every
       time this action is selected in a review and can be used to set specific descriptive text and
       formatting.
     </p>
-    {{wikitext_form(action_url = url_for('cleanup_action.handle_wikitext', action = action_name,
-                                         category = 'individual'),
-                    category = 'individual_wikitext', maxlen = WIKITEXT_MAX_LEN, rows = 4,
-                    cols = 64, content = individual_wikitext) | indent(4) }}
+    {{wikitext_form(action_url = individual_wikitext_url, category = 'individual_wikitext',
+                    maxlen = WIKITEXT_MAX_LEN, rows = 4, cols = 64,
+                    content = individual_wikitext_content) | indent(4) }}
     <h2> Distinct action wikitext </h2>
     <p>
       You can set the contents of the <code>%%TEXT%%</code> token for the
-      <a href="{{url_for('help_page.view_get', page = 'wikitext', _anchor ='#distinctactions')}}">
+      <a href="{{url_for('help_page.get', page = 'wikitext', _anchor ='#distinctactions')}}">
       <code>#distinctactions</code></a> parser function here. This is intended to appear just once
       if this action is selected in a review and can be used to specify categories if needed.
     </p>
-    {{wikitext_form(action_url = url_for('cleanup_action.handle_wikitext', action = action_name,
-                                         category = 'distinct'),
-                    category = 'distinct_wikitext', maxlen = WIKITEXT_MAX_LEN, rows = 4, cols = 64,
-                    content = distinct_wikitext) | indent(4) }}
+    {{wikitext_form(action_url = distinct_wikitext_url, category = 'distinct_wikitext',
+                    maxlen = WIKITEXT_MAX_LEN, rows = 4, cols = 64,
+                    content = distinct_wikitext_content) | indent(4) }}
     <h2> Unanimous action wikitext </h2>
     <p>
       You can set the contents of the <code>%%TEXT%%</code> token for the
-      <a href="{{url_for('help_page.view_get', page = 'wikitext', _anchor ='#unanimousaction')}}">
+      <a href="{{url_for('help_page.get', page = 'wikitext', _anchor ='#unanimousaction')}}">
       <code>#unanimousaction</code></a> parser function here. This is intended to appear when all
       selected actions are the same and can be used to summarize repetitive review actions.
     </p>
-    {{wikitext_form(action_url = url_for('cleanup_action.handle_wikitext', action = action_name,
-                                         category = 'unanimous'),
-                    category = 'unanimous_wikitext', maxlen = WIKITEXT_MAX_LEN, rows = 4, cols = 64,
-                    content = unanimous_wikitext) | indent(4) }}
+    {{wikitext_form(action_url = unanimous_wikitext_url, category = 'unanimous_wikitext',
+                    maxlen = WIKITEXT_MAX_LEN, rows = 4, cols = 64,
+                    content = unanimous_wikitext_content) | indent(4) }}
   </body>
 </html>

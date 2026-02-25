@@ -14,42 +14,6 @@ NAME_MAX_LEN = 32
 DESCRIPTION_MAX_LEN = 128
 WIKITEXT_MAX_LEN = 256
 
-#Route handler for the cleanup actions table
-@blueprint.route('/cleanup_action', methods = ['GET', 'POST'])
-@session_control.login_required('plan')
-def handle_all() -> str:
-  #Call the corresponding method handler
-  match request.method:
-    case 'GET':  return _read_all()
-    case 'POST': return _create()
-
-#Route handler for specific cleanup actions
-@blueprint.route('/cleanup_action/<action>', methods = ['GET', 'PATCH', 'DELETE'])
-@session_control.login_required('plan')
-def handle_single(action: str) -> str:
-  action = _url_decode(action)
-
-  #Call the corresponding method handler
-  match request.method:
-    case 'GET':    return _read_single(action)
-    case 'PATCH':  return _update(action)
-    case 'DELETE': return _delete(action)
-
-#Route handler for reasons linked to actions
-@blueprint.route('/cleanup_action/<action>/reason_link/<reason>', methods = ['PATCH'])
-@session_control.login_required('plan')
-def handle_reason(action: str, reason: str) -> str:
-  action = _url_decode(action)
-  reason = _url_decode(reason)
-  return _update_reason(action, reason)
-
-#Route handler for wikitext liked to actions
-@blueprint.route('/cleanup_action/<action>/wikitext/<category>', methods = ['PATCH'])
-@session_control.login_required('plan')
-def handle_wikitext(action: str, category: str) -> str:
-  action = _url_decode(action)
-  return _update_wikitext(action, category)
-
 #Error handler for this blueprint
 @blueprint.errorhandler(HTTPException)
 def request_failed(e: HTTPException) -> tuple[str, int] | HTTPException:
@@ -62,14 +26,18 @@ def request_failed(e: HTTPException) -> tuple[str, int] | HTTPException:
     #intended to be handled by frontend scripts
     return e.description, e.code
 
-#Create a new cleanup action
-def _create() -> str:
+#Route handler for creating a new cleanup action
+@blueprint.post('/cleanup_action')
+@session_control.login_required('plan')
+def post() -> str:
   _validate_name_description()
   status = cleanup_actions.create(request.form['name'], request.form['description'])
   return _handle_cleanup_actions_return_status(status)
 
-#Read all cleanup actions and present them in a table
-def _read_all() -> str:
+#Route handler for the main cleanup actions view
+@blueprint.get('/cleanup_action')
+@session_control.login_required('plan')
+def view_all_get() -> str:
   name_description_list = cleanup_actions.read_name_description_all()
 
   render_params = {
@@ -95,41 +63,44 @@ def _read_all() -> str:
       ),
       'rows': tuple({
         'cells': (
-          { 'value': name, 'link_url': action_url },
+          { 'value': name,
+            'link_url': url_for('cleanup_action.view_single_get', action = _url_encode(name)) },
           { 'value': description },
         ),
         'actions': {
           'allow_update': True,
-          'update_url': action_url,
+          'update_url': url_for('cleanup_action.patch', action = _url_encode(name)),
           'allow_delete': True,
-          'delete_url': action_url,
+          'delete_url': url_for('cleanup_action.delete', action = _url_encode(name)),
           'buttons': (
             *(({
               'name': 'move_position',
               'label': Markup('&uarr;'),
               'value': 'backward',
-              'url': action_url,
+              'url': url_for('cleanup_action.patch', action = _url_encode(name)),
               'method': 'PATCH',
             },) if index > 0 else ()),
             *(({
               'name': 'move_position',
               'label': Markup('&darr;'),
               'value': 'forward',
-              'url': action_url,
+              'url': url_for('cleanup_action.patch', action = _url_encode(name)),
               'method': 'PATCH',
             },) if index < len(name_description_list) - 1 else ()),
           ),
         },
-      } for index, (name, description) in enumerate(name_description_list)
-        for action_url in (url_for('cleanup_action.handle_single', action = _url_encode(name)),)),
-      'create_url': url_for('cleanup_action.handle_all'),
+      } for index, (name, description) in enumerate(name_description_list)),
+      'create_url': url_for('cleanup_action.post'),
     },
   }
 
   return render_template('view/cleanup_action_all.jinja.html', **render_params)
 
-#Read a single cleanup action and present its details
-def _read_single(action: str) -> str:
+#Route handler for the single cleanup action view
+@blueprint.get('/cleanup_action/<action>')
+@session_control.login_required('plan')
+def view_single_get(action: str) -> str:
+  action = _url_decode(action)
   action_description = cleanup_actions.read_description(action)
 
   if action_description is None: abort(404)
@@ -167,7 +138,7 @@ def _read_single(action: str) -> str:
         'cells': (
           { 'value': is_linked },
           { 'value': reason,
-            'link_url': url_for('cleanup_reason.handle_single', reason = _url_encode(reason)) },
+            'link_url': url_for('cleanup_reason.view_single_get', reason = _url_encode(reason)) },
           { 'value': reason_description },
         ),
         'actions': {
@@ -202,19 +173,28 @@ def _read_single(action: str) -> str:
           ),
         },
       } for index, (is_linked, reason, reason_description) in enumerate(cleanup_reasons)
-        for reason_url in (url_for('cleanup_action.handle_reason', action = _url_encode(action),
-                                                                   reason = _url_encode(reason)),)),
+        for reason_url in (url_for('cleanup_action.linked_reason_patch',
+                                   action = _url_encode(action), reason = _url_encode(reason)),)),
     },
     'WIKITEXT_MAX_LEN': WIKITEXT_MAX_LEN,
-    'individual_wikitext': wikitext_contents['individual'],
-    'distinct_wikitext': wikitext_contents['distinct'],
-    'unanimous_wikitext': wikitext_contents['unanimous'],
+    'individual_wikitext_content': wikitext_contents['individual'],
+    'individual_wikitext_url': url_for('cleanup_action.wikitext_update',
+                                       action = _url_encode(action), category = 'individual'),
+    'distinct_wikitext_content': wikitext_contents['distinct'],
+    'distinct_wikitext_url': url_for('cleanup_action.wikitext_update',
+                                     action = _url_encode(action), category = 'distinct'),
+    'unanimous_wikitext_content': wikitext_contents['unanimous'],
+    'unanimous_wikitext_url': url_for('cleanup_action.wikitext_update',
+                                      action = _url_encode(action), category = 'unanimous'),
   }
 
   return render_template('view/cleanup_action_single.jinja.html', **render_params)
 
-#Update either the position or the name and description of a cleanup action
-def _update(action: str) -> str:
+#Route handler for updating either the position or the name and description of a cleanup action
+@blueprint.patch('/cleanup_action/<action>')
+@session_control.login_required('plan')
+def patch(action: str) -> str:
+  action = _url_decode(action)
   if 'move_position' in request.form:
     #Reordering parameter present, act according to its value
     match request.form['move_position']:
@@ -232,13 +212,22 @@ def _update(action: str) -> str:
   status = cleanup_actions.update(action, request.form['name'], request.form['description'])
   return _handle_cleanup_actions_return_status(status)
 
-#Delete a single cleanup action
-def _delete(action: str) -> str:
+#Route handler for deleting a single cleanup action
+@blueprint.delete('/cleanup_action/<action>')
+@session_control.login_required('plan')
+def delete(action: str) -> str:
+  action = _url_decode(action)
   status = cleanup_actions.delete(action)
   return _handle_cleanup_actions_return_status(status)
 
-#Update either the position or the valid choice status of a reason linked to an action
-def _update_reason(action: str, reason: str) -> str:
+#Route handler for updating either the position or the valid choice status of a reason linked to an
+#action
+@blueprint.patch('/cleanup_action/<action>/reason_link/<reason>')
+@session_control.login_required('plan')
+def linked_reason_patch(action: str, reason: str) -> str:
+  action = _url_decode(action)
+  reason = _url_decode(reason)
+
   if 'move_position' in request.form:
     #Reordering parameter present, act according to its value
     match request.form['move_position']:
@@ -256,8 +245,12 @@ def _update_reason(action: str, reason: str) -> str:
   status = cleanup_action_reasons.update(action, reason, valid_choice);
   return _handle_cleanup_action_reasons_return_status(status)
 
-#Update the wikitext of a cleanup action
-def _update_wikitext(action: str, category: str) -> str:
+#Route handler for updating the wikitext of a cleanup action
+@blueprint.patch('/cleanup_action/<action>/wikitext/<category>')
+@session_control.login_required('plan')
+def wikitext_update(action: str, category: str) -> str:
+  action = _url_decode(action)
+
   #Validate request parameters
   _validate_wikitext()
 

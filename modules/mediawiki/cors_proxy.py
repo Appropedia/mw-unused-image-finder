@@ -38,14 +38,14 @@ def _on_load():
             HTTPSConnectionPool(server.hostname, server.port)
 
     #Add the route handler and set the frontend API configuration to that
-    blueprint.get('/api')(api_get)
-    config.root.mediawiki_server.frontend_api = lambda: url_for('cors_proxy.api_get')
+    blueprint.get('/api')(get)
+    config.root.mediawiki_server.frontend_api = lambda: url_for('cors_proxy.get')
   else:
     #CORS proxy disabled. Set the frontend API to the mediawiki server.
     config.root.mediawiki_server.frontend_api = lambda: config.root.mediawiki_server.api
 
 #When enabled this function handles @blueprint.get('/api')
-def api_get():
+def get():
   #Make the request to the mediawiki server on behalf of the client and relay the query parameters
   server = config.root.mediawiki_server.url
   mw_resp = _pool.urlopen('GET', f'{server.path}?{urlencode(request.args)}')

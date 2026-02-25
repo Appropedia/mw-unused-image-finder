@@ -12,34 +12,6 @@ NAME_MAX_LEN = 32
 DESCRIPTION_MAX_LEN = 128
 WIKITEXT_MAX_LEN = 256
 
-#Route handler for the cleanup reasons table
-@blueprint.route('/cleanup_reason', methods = ['GET', 'POST'])
-@session_control.login_required('plan')
-def handle_all() -> str:
-  #Call the corresponding method handler
-  match request.method:
-    case 'GET':  return _read_all()
-    case 'POST': return _create()
-
-#Route handler for specific cleanup reasons
-@blueprint.route('/cleanup_reason/<reason>', methods = ['GET', 'PATCH', 'DELETE'])
-@session_control.login_required('plan')
-def handle_single(reason: str) -> str:
-  reason = _url_decode(reason)
-
-  #Call the corresponding method handler
-  match request.method:
-    case 'GET':    return _read_single(reason)
-    case 'PATCH':  return _update(reason)
-    case 'DELETE': return _delete(reason)
-
-#Route handler for wikitext liked to reasons
-@blueprint.route('/cleanup_reason/<reason>/wikitext', methods = ['PATCH'])
-@session_control.login_required('plan')
-def handle_wikitext(reason: str) -> str:
-  reason = _url_decode(reason)
-  return _update_wikitext(reason)
-
 #Error handler for this blueprint
 @blueprint.errorhandler(HTTPException)
 def request_failed(e: HTTPException) -> tuple[str, int] | HTTPException:
@@ -52,14 +24,18 @@ def request_failed(e: HTTPException) -> tuple[str, int] | HTTPException:
     #intended to be handled by frontend scripts
     return e.description, e.code
 
-#Create a new cleanup reason
-def _create() -> str:
+#Route handler for creating a new cleanup reason
+@blueprint.post('/cleanup_reason')
+@session_control.login_required('plan')
+def post() -> str:
   _validate_name_description()
   status = cleanup_reasons.create(request.form['name'], request.form['description'])
   return _handle_cleanup_reasons_return_status(status)
 
-#Read all cleanup reasons and present them in a table
-def _read_all() -> str:
+#Route handler for the main cleanup reasons view
+@blueprint.get('/cleanup_reason')
+@session_control.login_required('plan')
+def view_all_get() -> str:
   render_params = {
     'table_descriptor': {
       'fields': (
@@ -83,25 +59,28 @@ def _read_all() -> str:
       ),
       'rows': tuple({
         'cells': (
-          { 'value': name, 'link_url': reason_url },
+          { 'value': name,
+            'link_url': url_for('cleanup_reason.view_single_get', reason = _url_encode(name)) },
           { 'value': description },
         ),
         'actions': {
           'allow_update': True,
-          'update_url': reason_url,
+          'update_url': url_for('cleanup_reason.patch', reason = _url_encode(name)),
           'allow_delete': True,
-          'delete_url': reason_url,
+          'delete_url': url_for('cleanup_reason.delete', reason = _url_encode(name)),
         },
-      } for name, description in cleanup_reasons.read_name_description_all()
-        for reason_url in (url_for('cleanup_reason.handle_single', reason = _url_encode(name)),)),
-      'create_url': url_for('cleanup_reason.handle_all'),
+      } for name, description in cleanup_reasons.read_name_description_all()),
+      'create_url': url_for('cleanup_reason.post'),
     },
   }
 
   return render_template('view/cleanup_reason_all.jinja.html', **render_params)
 
-#Read a single cleanup reason and present its details
-def _read_single(reason: str) -> str:
+#Route handler for the single cleanup reason view
+@blueprint.get('/cleanup_reason/<reason>')
+@session_control.login_required('plan')
+def view_single_get(reason: str) -> str:
+  reason = _url_decode(reason)
   description = cleanup_reasons.read_description(reason)
 
   if description is None: abort(404)
@@ -113,27 +92,39 @@ def _read_single(reason: str) -> str:
     'description': description,
     'cleanup_actions': tuple({
       'name': action_name,
-      'url': url_for('cleanup_action.handle_single', action = action_name),
+      'url': url_for('cleanup_action.view_single_get', action = _url_encode(action_name)),
     } for action_name in cleanup_action_reason_links.get_actions_linked_to_reason(reason)),
     'WIKITEXT_MAX_LEN': WIKITEXT_MAX_LEN,
-    'distinct_wikitext': wikitext_contents,
+    'distinct_wikitext_content': wikitext_contents,
+    'distinct_wikitext_url': url_for('cleanup_reason.wikitext_update',
+                                     reason = _url_encode(reason)),
   }
 
   return render_template('view/cleanup_reason_single.jinja.html', **render_params)
 
-#Update the name and description of a cleanup reason
-def _update(reason: str) -> str:
+#Route handler for updating the name and description of a cleanup reason
+@blueprint.patch('/cleanup_reason/<reason>')
+@session_control.login_required('plan')
+def patch(reason: str) -> str:
+  reason = _url_decode(reason)
   _validate_name_description()
   status = cleanup_reasons.update(reason, request.form['name'], request.form['description'])
   return _handle_cleanup_reasons_return_status(status)
 
-#Delete a single cleanup reason
-def _delete(reason: str) -> str:
+#Route handler for deleting a single cleanup reason
+@blueprint.delete('/cleanup_reason/<reason>')
+@session_control.login_required('plan')
+def delete(reason: str) -> str:
+  reason = _url_decode(reason)
   status = cleanup_reasons.delete(reason)
   return _handle_cleanup_reasons_return_status(status)
 
-#Update the wikitext of a cleanup reason
-def _update_wikitext(reason: str) -> str:
+#Route handler for updating the wikitext of a cleanup reason
+@blueprint.patch('/cleanup_reason/<reason>/wikitext')
+@session_control.login_required('plan')
+def wikitext_update(reason: str) -> str:
+  reason = _url_decode(reason)
+
   #Validate request parameters
   _validate_wikitext()
 

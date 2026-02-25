@@ -53,7 +53,7 @@ def request_failed(e: HTTPException) -> tuple[str, int] | HTTPException:
 #Route handler for the main user management view
 @blueprint.get('/user_management')
 @session_control.login_required('admin')
-def user_management_get() -> str:
+def view_get() -> str:
   #Collect all user names, status flags and privileges
   user_data = tuple(
     user | { 'privileges': user_privileges.get(user['name']) }

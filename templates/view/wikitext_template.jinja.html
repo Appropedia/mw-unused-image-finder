@@ -8,15 +8,15 @@
     <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
   </head>
   <body>
-    {{top_bar('Back to main', 'default.view_get') | indent(4)}}
+    {{top_bar('Back to main', 'default.get') | indent(4)}}
     <h1> Wikitext Template </h1>
     <p>
       Here you can modify the wikitext template contents for the Mediawiki bot
     </p>
-    {{wikitext_form(action_url = url_for('wikitext_template.content_patch'), category = 'wikitext',
+    {{wikitext_form(action_url = url_for('wikitext_template.patch'), category = 'wikitext',
                     maxlen = WIKITEXT_MAX_LEN, rows = 20, cols = 128, content = wikitext) |
       indent(4) }}
     The bot accepts specific wikitext extensions, which are detailed
-    <a href="{{url_for('help_page.view_get', page = 'wikitext')}}">here</a>.
+    <a href="{{url_for('help_page.get', page = 'wikitext')}}">here</a>.
   </body>
 </html>

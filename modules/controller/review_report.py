@@ -9,7 +9,7 @@ blueprint = Blueprint('review_report', __name__)
 #Route handler for the review report view
 @blueprint.get('/review_report')
 @session_control.login_required()
-def view_get() -> str:
+def get() -> str:
   #Create a dictionary with the available request filters and their valid values, if applicable
   available_filters = {
     'review_author':    { 'type': 'select', 'options': users.read_name_all() },
