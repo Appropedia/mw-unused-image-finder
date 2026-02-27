@@ -19,10 +19,22 @@ config.register({
   },
 })
 
-#Route handler for the image dealer view
-@blueprint.route('/image_review')
+#Error handler for this blueprint
+@blueprint.errorhandler(HTTPException)
+def request_failed(e: HTTPException) -> tuple[str, int] | HTTPException:
+  if request.method == 'GET':
+    #Give back the unmodified exception to the default handler in case of GET requests, since any
+    #related error response is intended to be handled by browsers
+    return e
+  else:
+    #Error responses for any other request methods are rendered as unformatted text, as they're
+    #intended to be handled by frontend scripts
+    return e.description, e.code
+
+#Route handler for the image dealer
+@blueprint.get('/image_review')
 @session_control.login_required('review')
-def deal():
+def dealer_get():
   #Read and validate request arguments
   prev_image = request.args.get('prev_image', None)
   category = request.args.get('category', None)
@@ -40,34 +52,14 @@ def deal():
                                               prev_image)
 
   if image_title is None:
-    return 'The image dealer has run out of images'
+    return 'There are no more images in this category'
 
-  return redirect(url_for('image_review.handle_review',
-                          image_title = image_title, category = category))
+  return redirect(url_for('image_review.get', image_title = image_title, category = category))
 
-#Route handler for the image review view
-@blueprint.route('/image_review/<image_title>', methods = ['GET', 'PUT'])
-@session_control.login_required('review')
-def handle_review(image_title: str):
-  #Call the corresponding method handler
-  match request.method:
-    case 'GET': return _read(image_title)
-    case 'PUT': return _update(image_title)
-
-#Error handler for this blueprint
-@blueprint.errorhandler(HTTPException)
-def request_failed(e: HTTPException) -> tuple[str, int] | HTTPException:
-  if request.method == 'GET':
-    #Give back the unmodified exception to the default handler in case of GET requests, since any
-    #related error response is intended to be handled by browsers
-    return e
-  else:
-    #Error responses for any other request methods are rendered as unformatted text, as they're
-    #intended to be handled by frontend scripts
-    return e.description, e.code
-
-#Read method handler for the image review view
-def _read(image_title: str) -> str:
+#Route handler for image reviews
+@blueprint.get('/image_review/<image_title>')
+@session_control.login_required()
+def get(image_title: str) -> str:
   #Select the rendered page according to the following conditions:
   # - If a review from a specific user is requested, render that review (if exists)
   # - If no review from any user exists, render an empty/new review
@@ -89,6 +81,14 @@ def _read(image_title: str) -> str:
       return _render_user_review(image_title, review_authors[0])
     case 2:
       return _render_review_selection(image_title)
+
+#Route handler for saving image reviews
+@blueprint.put('/image_review/<image_title>')
+@session_control.login_required('review')
+def put(image_title) -> str:
+  _validate_update_args()
+  status = review_store.write(image_title, g.user_id, request.json)
+  return _handle_review_store_return_status(status)
 
 #Render a view for choosing an image review from multiple authors
 def _render_review_selection(image_title: str) -> str:
@@ -127,8 +127,10 @@ def _render_user_review(image_title: str, user_name: str | None) -> str:
 
   if image_id is None: abort(404)
 
-  #Add all available cleanup actions and reasons to the render parameters
-  render_params['cleanup_actions'] = cleanup_action_reason_links.get_actions_and_reasons()
+  #Add all available cleanup actions and reasons to the render parameters if the user is allowed to
+  #create or modify reviews
+  if 'review' in g.user_privileges:
+    render_params['cleanup_actions'] = cleanup_action_reason_links.get_actions_and_reasons()
 
   #If a review author has been specified, retrieve that author's review details and add them to the
   #render parameters as well
@@ -146,7 +148,7 @@ def _render_user_review(image_title: str, user_name: str | None) -> str:
   for ref_timestamp in render_params['similar_images']:
     for title in render_params['similar_images'][ref_timestamp]:
       render_params['similar_images'][ref_timestamp][title]['review_url'] = \
-        url_for('image_review.handle_review', image_title = title)
+        url_for('image_review.get', image_title = title)
 
   #Write the concession so other users get other images during the concession period
   image_concessions.write(g.user_id, image_id)
@@ -157,12 +159,6 @@ def _render_user_review(image_title: str, user_name: str | None) -> str:
   #less probable to offer that same image to yet another user.
 
   return render_template('view/image_review.jinja.html', **render_params)
-
-#Process a review write request
-def _update(image_title) -> str:
-  _validate_update_args
-  status = review_store.write(image_title, g.user_id, request.json)
-  return _handle_review_store_return_status(status)
 
 #Make sure the update query parameters are valid or abort the request
 def _validate_update_args() -> None:

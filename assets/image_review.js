@@ -304,7 +304,6 @@ export async function download_revision_data(api_url, state, image_title, cleanu
                                              cleanup_proposal)
 {
   const wiki_link = document.getElementById('wiki_link');
-  const revision_strip = document.getElementById('revision_strip');
 
   //Query file information first
   const image_info = await query_image_info(api_url, image_title);
@@ -312,6 +311,22 @@ export async function download_revision_data(api_url, state, image_title, cleanu
   //Set the wiki link URL and get the revisions
   wiki_link.href = image_info.descriptionurl;
   state.revisions = image_info.revisions;
+
+  if (Array.isArray(cleanup_actions))
+    //If cleanup actions are provided as an array then populate the DOM with revision information
+    //presented as a form, so they can be selected for each one
+    update_revision_strip_form(state, cleanup_actions, cleanup_proposal);
+  else
+    //If cleanup actions are provided as something else (e.g. null) then populate the DOM with
+    //revision information presented as read-only information
+    update_revision_strip_readonly(state, cleanup_proposal);
+
+  select_image(state);  //Refresh the selected image
+}
+
+//Populate the DOM with revision information presented as a form
+function update_revision_strip_form(state, cleanup_actions, cleanup_proposal) {
+  const revision_strip = document.getElementById('revision_strip');
 
   let min_size = Infinity, max_size = 0;
   for (let index = 0; index < state.revisions.length; index++) {
@@ -443,8 +458,56 @@ export async function download_revision_data(api_url, state, image_title, cleanu
       size_div.style.backgroundColor = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.5)`;
     }
   }
+}
 
-  select_image(state);  //Refresh the selected image
+//Populate the DOM with revision information presented as read-only information
+function update_revision_strip_readonly(state, cleanup_proposal) {
+  const revision_strip = document.getElementById('revision_strip');
+  for (let index = 0; index < state.revisions.length; index++) {
+    //Create a new element in the thumbnail strip
+    const rev_strip_element = revision_strip.appendChild(document.createElement('div'));
+    rev_strip_element.classList.add('revision');
+    rev_strip_element.innerHTML = `
+    <div class="revision_thumbnail" id="revision_img_div_${index}">
+      <img id="revision_img_${index}">
+    </div>
+    <div class="revision_details">
+      <div id="action_${index}"></div>
+      <div id="reason_${index}"></div>
+    </div>
+    <div class="revision_details">
+      <div> Size: </div>
+      <div> ${format_storage_units(state.revisions[index].size)} </div>
+    </div>
+    <div class="revision_details">
+      <div> Dimensions: </div>
+      <div> ${state.revisions[index].dimensions} </div>
+      <div> Time: </div>
+      <div> ${format_local_datetime(state.revisions[index].timestamp)} </div>
+    </div>
+    `;
+
+    //Set the source to the revision thumbnail
+    const img = document.getElementById(`revision_img_${index}`);
+    img.src = state.revisions[index].thumburl;
+
+    //Add a click event listener to the selectable thumbnail container
+    const img_container = document.getElementById(`revision_img_div_${index}`);
+    img_container.addEventListener('click', () => { select_image(state, index); });
+
+    //The action and reason div elements will be populated with their registered information next
+    const action_div = document.getElementById(`action_${index}`);
+    const reason_div = document.getElementById(`reason_${index}`);
+    const timestamp = state.revisions[index].timestamp;
+
+    //Attempt to load the stored review data, if available
+    action_div.textContent = timestamp in cleanup_proposal?
+                             'Action: ' + cleanup_proposal[timestamp].cleanup_action_name:
+                             'No action selected';
+    reason_div.textContent = timestamp in cleanup_proposal?
+                             'Reason: ' + cleanup_proposal[timestamp].cleanup_reason_name:
+                             'No reason selected';
+  }
 }
 
 //Query the wiki for information about images similar to the current one and update the DOM when
@@ -462,12 +525,9 @@ export async function download_similar_image_data(api_url, state, similar_images
     }
   }
 
-  //Avoid querying for information if there's no similar images
-  if (similar_image_titles.length === 0)
-    return;
-
-  //Query for information on similar images
-  const wiki_image_info = await query_multiple_images(api_url, similar_image_titles);
+  //Query for information on similar images if there's any (avoid querying if none)
+  const wiki_image_info = (similar_image_titles.length === 0)? {}:
+                          await query_multiple_images(api_url, similar_image_titles);
 
   //Perform a nested iteration over the similar image (si) information object, down to each revision
   const similar_img_elements = {};  //Temporary holder for element references
@@ -589,7 +649,7 @@ export async function register_review_submit_listener(state) {
     }
     else {
       //If something goes wrong, use the server response body to show the error message
-      form_submit_result.innerHTML = response_text;
+      form_submit_result.textContent = response_text;
       form_submit_result.style.opacity = 1;
     }
   });

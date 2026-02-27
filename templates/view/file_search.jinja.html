@@ -29,7 +29,7 @@
     </p>
     <ul>
     {% for r in results %}
-      <li><a href="{{url_for('image_review.handle_review', image_title = r)}}">{{r}}</a></li>
+      <li><a href="{{url_for('image_review.get', image_title = r)}}">{{r}}</a></li>
     {% endfor %}
     </ul>
     <p>

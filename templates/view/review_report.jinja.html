@@ -96,7 +96,7 @@
           {{loop.index + offset}}
         </td>
         <td>
-          <a href="{{url_for('image_review.handle_review', image_title = r['image_title'],
+          <a href="{{url_for('image_review.get', image_title = r['image_title'],
                              author = r['author'])}}">
             {{r['image_title']}}
           </a>

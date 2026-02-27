@@ -15,7 +15,7 @@
 
     <ul id="review_list">
 {% for rs in review_summary %}
-{% set review_url = url_for('image_review.handle_review', image_title = image_title,
+{% set review_url = url_for('image_review.get', image_title = image_title,
                             author = rs['user_name']) %}
       <li>
         <a href="{{review_url}}"> {{rs['timestamp']}} </a> by {{rs['user_name']}}

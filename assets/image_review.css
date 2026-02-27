@@ -109,7 +109,7 @@ div.revision_section div.revision_strip {
 /* Container for revision thumbnails and forms */
 div.revision_strip div.revision {
   display: flex;
-  gap: 0.5em;
+  gap: 1em;
 }
 
 /* Container for revision thumbnails */

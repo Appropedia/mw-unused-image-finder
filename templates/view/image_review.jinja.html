@@ -75,6 +75,7 @@
           </div>
         </div>
         <div class="panel">
+{% if 'review' in g.user_privileges %}
           <div>
             <div>
               Apply to multiple revisions:
@@ -99,13 +100,15 @@
               </div>
             </div>
           </div>
+{% endif %}
           <div class="revision_section">
             <div> Revisions: </div>
             <div class="revision_strip" id="revision_strip"></div>
           </div>
           <div>
+{% if 'review' in g.user_privileges %}
             <form id="review_form"
-             action="{{url_for('image_review.handle_review', image_title = image['title'])}}">
+             action="{{url_for('image_review.put', image_title = image['title'])}}">
               <div>
                 <label for="comments">Comments:</label>
               </div>
@@ -120,36 +123,46 @@
                   <button type="submit"> Save review </button>
                   <span id="form_submit_result"></span>
                 </div>
-{% if category %}
+  {% if category %}
                 <div>
-                  <a href="{{url_for('image_review.deal',
-                                     category = category,
-                                     prev_image = image['title'])}}">
+                  <a href="{{url_for('image_review.dealer_get', category = category,
+                             prev_image = image['title'])}}">
                     Next file
                   </a>
                 </div>
-{% endif %}
+  {% endif %}
               </div>
             </form>
+{% else %}
+            <div>
+              Comments:
+            </div>
+            <div>{{review_data['comments']}}</div>
+{% endif %}
           </div>
         </div>
       </div>
     </div>
 
     <script type="module">
-      import { download_revision_data, download_similar_image_data, register_review_submit_listener,
-               initialize_common_options }
-      from {{url_for('static', filename = 'image_review.js') | tojson}};
+      import {
+        download_revision_data, download_similar_image_data,
+{% if 'review' in g.user_privileges %}
+        register_review_submit_listener, initialize_common_options,
+{% endif %}
+      } from {{url_for('static', filename = 'image_review.js') | tojson}};
 
       const api_url = {{api_url | tojson}};
 
+      const similar_images = {{similar_images | tojson(indent = 2) | indent(6)}};
+
       const image_title = {{image['title'] | tojson}};
 
+{% if 'review' in g.user_privileges %}
       const cleanup_actions = {{cleanup_actions | tojson(indent = 2) | indent(6)}};
 
+{% endif %}
       const cleanup_proposal = {{review_data.cleanup_proposal | tojson(indent = 2) | indent(6)}};
-
-      const similar_images = {{similar_images | tojson(indent = 2) | indent(6)}};
 
       const state = {
         similar_img_strip_elements: {},
@@ -157,17 +170,23 @@
         selected_image: 0,
       };
 
-      //Aynchronously update the revision information
-      download_revision_data(api_url, state, image_title, cleanup_actions, cleanup_proposal);
-
       //Asynchronously update the information for similar images as well
       download_similar_image_data(api_url, state, similar_images);
+{% if 'review' in g.user_privileges %}
+
+      //Aynchronously update the revision information
+      download_revision_data(api_url, state, image_title, cleanup_actions, cleanup_proposal);
 
       //Initialize the common options section elements
       initialize_common_options(state, cleanup_actions);
 
       //Register the submit event listener for the review form
       register_review_submit_listener(state);
+{% else %}
+
+      //Aynchronously update the revision information
+      download_revision_data(api_url, state, image_title, null, cleanup_proposal);
+{% endif %}
     </script>
   </body>
 </html>

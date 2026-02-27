@@ -9,6 +9,7 @@
   <body>
     {{top_bar() | indent(4)}}
     <p> Welcome to the MediaWiki cleanup assistant! </p>
+{% if 'review' in g.user_privileges %}
     <h1> Cleanup Strategies </h1>
     <p>
       Help us clean the wiki by selecting a cleanup strategy below. Files will be selected
@@ -17,20 +18,20 @@
     <ul>
       <li> Unused content:
         <ul>
-          <li><a href="{{url_for('image_review.deal', category = 'unused_img_all_rev')}}">
+          <li><a href="{{url_for('image_review.dealer_get', category = 'unused_img_all_rev')}}">
             Unused files
           </a></li>
-          <li><a href="{{url_for('image_review.deal', category = 'used_img_old_rev')}}">
+          <li><a href="{{url_for('image_review.dealer_get', category = 'used_img_old_rev')}}">
             Files with older revisions
           </a></li>
         </ul>
       </li>
       <li> Content in use:
         <ul>
-          <li><a href="{{url_for('image_review.deal', category = 'used_img_all_rev')}}">
+          <li><a href="{{url_for('image_review.dealer_get', category = 'used_img_all_rev')}}">
             Files by size
           </a></li>
-          <li><a href="{{url_for('image_review.deal', category = 'used_img_all_rev_count')}}">
+          <li><a href="{{url_for('image_review.dealer_get', category = 'used_img_all_rev_count')}}">
             Files by amount of revisions
           </a></li>
 {#
@@ -41,6 +42,7 @@
         </ul>
       </li>
     </ul>
+{% endif %}
     <h1> Useful links </h1>
     <ul>
       <li><a href="{{url_for('file_search.get')}}">
@@ -54,6 +56,7 @@
         Review report
       </a></li>
     </ul>
+{% if 'plan' in g.user_privileges %}
     <h1> Cleanup Plan Management </h1>
     <p>
       The following pages will allow you to define the cleanup options available for reviews and the
@@ -70,14 +73,17 @@
         Wikitext template
       </a></li>
     </ul>
+{% endif %}
     <h1> Settings </h1>
     <ul>
       <li><a href="{{url_for('user_management.password_update_get')}}">
         Update your password
       </a></li>
+{% if 'admin' in g.user_privileges %}
       <li><a href="{{url_for('user_management.view_get')}}">
         User management
       </a></li>
+{% endif %}
     </ul>
 {#
     Progress:
