@@ -3,6 +3,8 @@
 
 [sqlite3]
 #path = 'db.sqlite3'  #Default sqlite3 database file (consider moving to /var or similar)
+#Use this path if running in a container:
+#path = '/var/lib/mw-cleanup-assistant/db.sqlite3'
 
 [mediawiki_server]
 #api =                #A server URL must be provided, like: 'https://www.example.com/w/api.php'
@@ -18,6 +20,8 @@
 
 [security]
 #flask_secret_key_file = 'flask_secret_key.bin'   #Flask secret key file for user sessions
+#Use this path if running in a container:
+#flask_secret_key_file = '/var/lib/mw-cleanup-assistant/flask_secret_key.bin'
 
 [reverse_proxy]
 #enabled = false  #Enable if this application is exposed by a web server in reverse_proxy mode

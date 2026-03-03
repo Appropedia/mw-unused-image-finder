@@ -1,0 +1,32 @@
+#Note: Replace <path_to_config.toml> with the fully qualified path to the configuration file
+
+[Unit]
+#The systemd service description can be personalized if desired
+Description=MediaWiki Cleanup Assistant
+
+#Make sure the container is run after building the image at least once
+After=mw-cleanup-assistant-build.service
+Wants=mw-cleanup-assistant-build.service
+
+[Install]
+#Enable the container service at system startup
+WantedBy=default.target
+
+[Container]
+#The container name can be personalized if desired
+ContainerName=mw-cleanup-assistant
+
+#The image tag can be personalized if desired as long as it matches with the .build file
+Image=localhost/mw-cleanup-assistant
+
+#Map the server to host port 8080
+PublishPort=127.0.0.1:8080:80
+
+#Enable the init process so child processes can be reaped
+RunInit=true
+
+#Create a volume for the database
+Volume=mw-cleanup-assistant.volume:/var/lib/mw-cleanup-assistant
+
+#Mount the local configuration file
+Volume=<path_to_config.toml>:/mw-cleanup-assistant/config.toml

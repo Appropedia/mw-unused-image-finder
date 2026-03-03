@@ -2,9 +2,8 @@
 #---------------------------------------------------------------------------------------------------
 FROM alpine:latest AS extension_builder
 
-ARG SRC_DIR
 RUN apk add make gcc libc-dev sqlite-dev
-COPY --exclude=*.so $SRC_DIR/sqlite_extensions sqlite_extensions/
+COPY sqlite_extensions sqlite_extensions/
 RUN make -C sqlite_extensions
 
 #Final stage
@@ -17,32 +16,13 @@ RUN apk add imagemagick
 RUN apk add libjpeg-turbo
 
 #Change to the installation directory
-ARG APP_NAME="mw-unused-image-finder"
+ARG APP_NAME="mw-cleanup-assistant"
 WORKDIR /$APP_NAME
 
 #Setup the python virtual environment
-ARG SRC_DIR
 ENV PYTHONUNBUFFERED=1
-RUN --mount=source=$SRC_DIR/setup-python.sh,target=setup-python.sh ./setup-python.sh
+RUN --mount=source=setup-python.sh,target=setup-python.sh ./setup-python.sh
 RUN python/bin/pip install gunicorn
-
-#Make sure the configuration file is provided
-ARG CONFIG_FILE
-RUN if [ -z "$CONFIG_FILE" ]; then \
-  echo "CONFIG_FILE build argument is missing";\
-  exit 1;\
-fi
-
-#Copy the provided configuration file, then overlay the database path configuration
-COPY $CONFIG_FILE config.toml
-RUN --mount=source=$SRC_DIR/docker/overlay_config.py,target=overlay_config.py\
-    python/bin/python -m overlay_config config.toml - <<EOF
-[sqlite3]
-path = '/var/lib/$APP_NAME/db.sqlite3'
-
-[security]
-flask_secret_key_file = '/var/lib/$APP_NAME/flask_secret_key.bin'
-EOF
 
 #Set up crond to run the update and bot scripts at their respective moments
 RUN cat <<EOF >> /etc/crontabs/root
@@ -65,6 +45,8 @@ EOF
 
 #This wrapper script runs all processes in the container
 RUN cat <<EOF > /$APP_NAME/init.sh && chmod +x /$APP_NAME/init.sh
+#!/bin/sh
+
 #Start cron in foreground mode, so the image update script log can be captured
 crond -f &
 
@@ -77,17 +59,28 @@ exit $?
 EOF
 
 #Install the server application files
-COPY $SRC_DIR/app.py $SRC_DIR/update_images.py $SRC_DIR/mediawiki_bot.py ./
-COPY $SRC_DIR/setup-admin-account.py $SRC_DIR/regenerate_user_password.py ./
-COPY $SRC_DIR/modules modules/
-COPY $SRC_DIR/templates templates/
-COPY $SRC_DIR/assets assets/
+COPY app.py update_images.py mediawiki_bot.py ./
+COPY setup-admin-account.py regenerate_user_password.py ./
+COPY modules modules/
+COPY templates templates/
+COPY assets assets/
 COPY --from=extension_builder sqlite_extensions/*.so sqlite_extensions/
 
-#Set up a volume for the database and then initialize it
+#Set up a volume for the database
 RUN mkdir /var/lib/$APP_NAME
 VOLUME /var/lib/$APP_NAME
-RUN --mount=source=$SRC_DIR/initialize_db.py,target=initialize_db.py\
-    python/bin/python -m initialize_db
+
+#Initialize the sqlite3 database by running the corresponding script with a temporary configuration
+#that specifies its location
+RUN --mount=source=initialize_db.py,target=initialize_db.py <<EOF
+cat <<CONFIG_EOF > config.toml
+[sqlite3]
+path = '/var/lib/$APP_NAME/db.sqlite3'
+CONFIG_EOF
+
+python/bin/python -B -m initialize_db
+
+rm config.toml
+EOF
 
 CMD ["./init.sh"]

@@ -1,0 +1,19 @@
+#Note: Replace <path_to_repository> with the fully qualified path to the git repository
+
+[Unit]
+#The systemd service description can be personalized if desired
+Description=Podman image build service for mw-cleanup-assistant
+
+[Service]
+#Prevent the build service from being run every time the container is started
+RemainAfterExit=yes
+
+[Build]
+#The image tag can be personalized if desired as long as it matches with the .container file
+ImageTag=localhost/mw-cleanup-assistant
+
+#Use the repository directory as the main context
+SetWorkingDirectory=<path_to_repository>
+
+#Use the dockerfile provided in the repository
+File=docker/Dockerfile

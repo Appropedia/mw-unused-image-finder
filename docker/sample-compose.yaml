@@ -1,21 +1,20 @@
-name: mw-unused-image-finder
+name: mw-cleanup-assistant
 
 services:
   web-server:
     build:
-      #Use the dockerfile provided in the repo
-      dockerfile: mw-unused-image-finder/docker/Dockerfile
-      args:
-        #Set the relative path to the repo so sources can be found
-        - SRC_DIR=mw-unused-image-finder
-        #Set the path to the configuration file
-        - CONFIG_FILE=config.toml
+      #Use the repository directory as the main context
+      context: mw-cleanup-assistant
+      #Use the dockerfile provided in the repository
+      dockerfile: docker/Dockerfile
     ports:
       #Map the server to host port 8080
       - 127.0.0.1:8080:80
     volumes:
       #Create a volume for the database
-      - database:/var/lib/mw-unused-image-finder
+      - database:/var/lib/mw-cleanup-assistant
+      #Mount the local configuration file
+      - ./config.toml:/mw-cleanup-assistant/config.toml
     logging:
       #The local logging driver provides log rotation and limits space usage by default
       driver: local
