@@ -21,7 +21,7 @@ WORKDIR /$APP_NAME
 
 #Setup the python virtual environment
 ENV PYTHONUNBUFFERED=1
-RUN --mount=source=setup-python.sh,target=setup-python.sh ./setup-python.sh
+RUN --mount=source=setup_python.sh,target=setup_python.sh ./setup_python.sh
 RUN python/bin/pip install gunicorn
 
 #Set up crond to run the update and bot scripts at their respective moments
@@ -60,7 +60,7 @@ EOF
 
 #Install the server application files
 COPY app.py update_images.py mediawiki_bot.py ./
-COPY setup-admin-account.py regenerate_user_password.py ./
+COPY setup_admin_account.py regenerate_user_password.py ./
 COPY modules modules/
 COPY templates templates/
 COPY assets assets/

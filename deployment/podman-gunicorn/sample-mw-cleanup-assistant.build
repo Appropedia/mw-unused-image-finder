@@ -16,4 +16,4 @@ ImageTag=localhost/mw-cleanup-assistant
 SetWorkingDirectory=<path_to_repository>
 
 #Use the dockerfile provided in the repository
-File=docker/Dockerfile
+File=deployment/docker-gunicorn/Dockerfile

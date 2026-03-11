@@ -6,7 +6,7 @@ services:
       #Use the repository directory as the main context
       context: mw-cleanup-assistant
       #Use the dockerfile provided in the repository
-      dockerfile: docker/Dockerfile
+      dockerfile: deployment/docker-gunicorn/Dockerfile
     ports:
       #Map the server to host port 8080
       - 127.0.0.1:8080:80

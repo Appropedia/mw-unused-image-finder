@@ -1,0 +1,5 @@
+#Note: Replace <path_to_repo> with the qualified path to the repository
+
+#This crontab will update images every 5 minutes and run the bot every minute
+*/5     *       *       *       *       <path_to_repo>/deployment/cron/update_images.sh
+*/1     *       *       *       *       <path_to_repo>/deployment/cron/mediawiki_bot.sh
