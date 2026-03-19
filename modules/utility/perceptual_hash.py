@@ -9,6 +9,7 @@ config.register({
   'perceptual_hashing': {
     'resolution_limit': 10000000,   #Default: 10 Mega pixel
     'image_magick_max_mem': '',     #Default: No memory limit (example: '256MiB')
+    'image_magick_cmd': 'magick',   #Default: Use newer command name (the older one is 'convert')
   },
 })
 
@@ -49,7 +50,7 @@ def _resize_image_if_needed(stream: Iterator[bytes]) -> tuple[Status, int, bytes
   #Prepare the program arguments
   max_mem = config.root.perceptual_hashing.image_magick_max_mem
   res_lim = config.root.perceptual_hashing.resolution_limit
-  args  = ['magick']
+  args  = [config.root.perceptual_hashing.image_magick_cmd]
   args += ['-limit', 'memory', max_mem] if max_mem else []
   args += ['-', '-thumbnail', f'{res_lim}@>', '-']
 

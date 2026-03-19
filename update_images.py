@@ -1,6 +1,10 @@
 #!/usr/bin/env -S sh -c 'cd $(dirname $0); python/bin/python -m $(basename ${0%.py}) $@'
 
+from collections.abc import Iterator
 from argparse import ArgumentParser
+from pathlib import Path
+from urllib.parse import urlparse, unquote
+from time import sleep
 import urllib3
 from modules.common import config
 from modules.model import db
@@ -9,6 +13,40 @@ from modules.model.view import pending_hashes
 from modules.model.aggregate import images_without_revisions
 from modules.mediawiki import api_client
 from modules.utility import perceptual_hash
+
+#Register module configurations
+config.register({
+  'image_updates': {
+    'download_delay': 0,  #Default: No delay
+    'remote_images': '',  #Default: Don't look for for local images
+    'local_images': '',   #Default: Same as previous
+  },
+})
+
+#Perform initialization based on configuration
+@config.on_load
+def _on_load():
+  global g_remote_image_url
+  global g_remote_image_path
+  global g_local_image_path
+
+  #Parse and validate the remote image URL, if provided
+  remote_images = config.root.image_updates.remote_images
+  if remote_images:
+    url = urlparse(remote_images)
+    if url.scheme not in ('http', 'https') or url.hostname is None or url.path == '':
+      raise ValueError(f'Invalid URL for configuration image_updates.remote_images: '
+                       f'{remote_images}')
+
+    g_remote_image_url = url
+    g_remote_image_path = Path(url.path.strip('/'))
+  else:
+    g_remote_image_url = None
+    g_remote_image_path = None
+
+  #Parse the local image path, if provided
+  local_images = config.root.image_updates.local_images
+  g_local_image_path = Path(local_images) if local_images else None
 
 config.load('config.toml', warn_unknown = False)
 db.go_without_flask()
@@ -160,20 +198,47 @@ def update_hashes():
 
   revision_count = 0
   revision_total = pending_hashes.total()
-  for revision_id, revision_url in pending_hashes.get():
+  for revision_id, revision_url_str in pending_hashes.get():
     revision_count += 1
-    print(f'{revision_count}/{revision_total} {revision_url} => ', end = '')
+    stream = None
 
-    #Perform a request to download the image and get the response
-    rsp = pool_mgr.request('GET', revision_url, preload_content = False)
+    #Check whether files should be searched locally first by confirming that all associated globals
+    #are set
+    if g_remote_image_url is not None and g_remote_image_path is not None and\
+       g_local_image_path is not None:
+      #The file revision should be searched locally, parse its url
+      revision_url = urlparse(unquote(revision_url_str))
+      revision_path = Path(revision_url.path.strip('/'))
 
-    #Make sure the response is 200 - OK
-    if rsp.status != 200:
-      print(f'Error code {rsp.status} - {rsp.reason}')
-      continue
+      #Compare the revision url to the (base) remote image url by comparing the scheme (item 0) and
+      #netloc (item 1) fields and then by checking if the paths are relative
+      if revision_url[:2] == g_remote_image_url[:2] and\
+         revision_path.is_relative_to(g_remote_image_path):
+        #The revision has a matching url, look for it locally
+        local_path = g_local_image_path / revision_path.relative_to(g_remote_image_path)
+        stream = _local_file_stream(local_path)
 
-    #Use the response stream to download, calculate the hashes of the image and obtain its size
-    status, file_size, new_hashes = perceptual_hash.calculate_phashes(rsp.stream())
+        if stream:
+          print(f'{revision_count}/{revision_total} {local_path} => ', end = '')
+
+    if not stream:
+      #No local image available, it'll be downloaded
+      print(f'{revision_count}/{revision_total} {revision_url_str} => ', end = '')
+
+      #Perform a request to download the image and get the response
+      sleep(config.root.image_updates.download_delay)
+      rsp = pool_mgr.request('GET', revision_url_str, preload_content = False)
+
+      #Make sure the response is 200 - OK
+      if rsp.status != 200:
+        print(f'Error code {rsp.status} - {rsp.reason}')
+        continue
+
+      #Use the stream from the response
+      stream = rsp.stream()
+
+    #Use the stream to (down)load, hash and obtain the size of the image
+    status, file_size, new_hashes = perceptual_hash.calculate_phashes(stream)
 
     #Store the file size first
     revisions.update_size(revision_id, file_size)
@@ -196,6 +261,20 @@ def update_hashes():
         print('Not a recognized image file')
 
   print('Done')
+
+#Open a local file for reading and return a stream compatible with urllib3's response streams
+def _local_file_stream(pathname: Path) -> Iterator[bytes] | None:
+  #Function used for generating chunks
+  def generator(pathname: Path) -> Iterator[bytes]:
+    with pathname.open('rb') as f:
+      while True:
+        chunk = f.read(65536)
+        if not chunk:
+          break
+        yield chunk
+
+  #Return an iterator if the file exists, otherwise return None
+  return generator(pathname) if pathname.is_file() else None
 
 #Register and parse program arguments
 parser = ArgumentParser()
