@@ -19,22 +19,22 @@ div.global_container div.panel_container {
   flex-grow: 1;
   display: grid;
   grid-template-columns: 50% auto;
-  gap: 2px;                   /* Create grid lines by setting background color, gaps and padding */
-  padding: 2px;
-  background-color: #000000;
+  gap: 1px;                   /* Create grid lines by setting background color, gaps and padding */
+  padding: 1px;
+  background-color: #A2A9B1;
 }
 
 /* Container for a single page panel */
 div.panel_container div.panel {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 /* Common properties for all divs directly inside panels */
 div.panel > div {
   padding: 0.25em;
-  background-color: #FFFFFF;  /* Background color for all small panels*/
+  background-color: #F8F9FA;  /* Background color for all small panels*/
 }
 
 /* Container for the currently selected image */
@@ -121,6 +121,14 @@ div.revision div.revision_thumbnail {
   max-width: 120px;
   min-height: 120px;
   max-height: 120px;
+}
+
+/* Revision thumbnail images */
+div.revision_thumbnail img {
+  min-width: 0;      /* Allow scaling down to the container size or keep intrinsic size */
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 /* Color the frame of the currently selected revision thumbnail */
