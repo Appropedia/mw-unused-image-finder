@@ -1,9 +1,12 @@
 #!/usr/bin/env -S sh -c 'cd $(dirname $0); python/bin/python -m $(basename ${0%.py}) $@'
 
 import re
+from datetime import datetime
+from time import sleep
 from modules.common import config
 from modules.model import db
 from modules.model.table import wikitext as wikitext_table
+from modules.model.table import image_reviews as image_review_table
 from modules.model.view import review_details
 from modules.utility.wikitext_evaluator import evaluate
 from modules.mediawiki_bot import api_client
@@ -15,6 +18,7 @@ config.register({
   'mediawiki_bot': {
     'username': '',
     'password': '',
+    'update_delay': 0,
   },
 })
 
@@ -130,6 +134,12 @@ lexicon = {
 
 #Update each review pending synchronization
 for image_review in review_details.get_pending_sync_reviews():
+  print(f'Updating wikitext for {image_review['image_title']}')
+
+  #Make note of the update time now, as the wiki update process can take some time depending on
+  #network and server traffic
+  update_time = datetime.now()
+
   #Set a new context for each review (deletes any data added by wikitext lexeme callbacks from
   #previous iterations)
   lexicon['context'] = {
@@ -139,7 +149,7 @@ for image_review in review_details.get_pending_sync_reviews():
     'author': image_review['author'],
   }
 
-  #Evaluate the bot template using the contextualized lexicon to genrate the review wikitext
+  #Evaluate the bot template using the contextualized lexicon to generate the review wikitext
   review_wikitext = evaluate(bot_template, lexicon)
 
   #Read the current article contents from the wiki, udpate them with the review wikitext and store
@@ -147,3 +157,9 @@ for image_review in review_details.get_pending_sync_reviews():
   article_wikitext = api_client.get_wikitext(image_review['image_title'])
   article_wikitext = update_article_wikitext(article_wikitext, review_wikitext)
   api_client.set_wikitext(session_cookie, csrf_token, image_review['image_title'], article_wikitext)
+
+  #Update successful, register the update time of the review now
+  image_review_table.update_bot_timestamp(image_review['id'], update_time)
+
+  #Insert a delay between iterations
+  sleep(config.root.mediawiki_bot.update_delay)

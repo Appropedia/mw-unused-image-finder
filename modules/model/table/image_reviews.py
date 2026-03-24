@@ -17,7 +17,7 @@ def init_schema() -> None:
 
 #Create a review for a given image or update an existing one, returning its id
 def write(con: sqlite3.Connection, image_id: int, user_id: int, timestamp: datetime,
-          comments: str) -> None:
+          comments: str) -> int:
   timestamp = timestamp.astimezone(timezone.utc)  #Make sure the timezone is UTC
 
   return con.execute(
@@ -29,3 +29,11 @@ def write(con: sqlite3.Connection, image_id: int, user_id: int, timestamp: datet
       'user_id': user_id,
       'timestamp': timestamp.replace(microsecond=0).isoformat().replace('+00:00', 'Z'),
       'comments': comments }).fetchone()[0]
+
+#Update the timestamp for the mediawiki bot component
+def update_bot_timestamp(id_: int, bot_timestamp: datetime) -> None:
+  bot_timestamp = bot_timestamp.astimezone(timezone.utc)  #Make sure the timezone is UTC
+
+  with db.get() as con:
+    con.execute('UPDATE image_reviews SET bot_timestamp = ? WHERE id = ?',
+                (bot_timestamp.replace(microsecond=0).isoformat().replace('+00:00', 'Z'), id_))

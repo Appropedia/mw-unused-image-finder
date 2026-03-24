@@ -30,6 +30,9 @@ def _reviewsections(context: dict[str, any], *args: str):
 
     #Check the condition and append the text to the result if fulfilled
     match cond:
+      case 'COMMENTS':
+        if len(context['comments']) > 0:
+          result.append(text)
       case 'UNANIMOUSACTION':
         if _unanimous_cleanup_actions(context):
           result.append(text)
