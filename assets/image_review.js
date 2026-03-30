@@ -193,7 +193,7 @@ function select_image(state, new_index = state.selected_image) {
 //   - empty string: Same as null
 //   - undefined: Don't preselect any particular option, but allow to automatically preselect an
 //     option if exactly one is given (otherwise select the guidance option)
-//   - An string with the text/value of the preselected option
+//   - A string with the text/value of the preselected option
 function populate_select_element(select_element, options, preselected_option) {
   //Abort if there are no options
   if (options.length === 0) {

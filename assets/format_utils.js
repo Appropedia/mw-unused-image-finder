@@ -22,8 +22,31 @@ export function format_storage_units(value) {
   return value.toPrecision(4) + ' ' + units[i];
 }
 
-//Format an ISO timestamp as a local datetime
+//Format an ISO timestamp as a UTC datetime in the default MediaWiki format
 export function format_local_datetime(iso_datetime) {
+  //Parse the ISO datetime
   const date = new Date(iso_datetime);
-  return date.toLocaleString();
+
+  //Define the format
+  const format = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'UTC',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  //Format the datetime
+  const formatted_datetime = format.formatToParts(date);
+
+  //The formatted datetime is an array of objects. Reduce them into a single one.
+  const parts = formatted_datetime.reduce((accumulator, part) => {
+    accumulator[part.type] = part.value;
+    return accumulator;
+  }, {});
+
+  //Return the reformatted date
+  return `${parts.hour}:${parts.minute}, ${parts.day} ${parts.month} ${parts.year}`;
 }

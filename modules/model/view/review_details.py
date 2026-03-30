@@ -98,7 +98,7 @@ def get_cleanup_proposal(image_review_id: int) -> list[dict[str, int | str]]:
 
   return cursor.fetchall()
 
-#This is an special version of the function above that takes a separate sqlite3 connection and
+#This is a special version of the function above that takes a separate sqlite3 connection and
 #returns data with shortened field names for JSON generation
 def _get_cleanup_proposal_special(con: sqlite3.Connection,
                                   image_review_id: int) -> list[dict[str, str]]:

@@ -5,7 +5,7 @@ from modules.model import db
 def init_schema() -> None:
   con = db.get()
 
-  #This view allows to query for the id and position of all cleanup reasons linked to an specific
+  #This view allows to query for the id and position of all cleanup reasons linked to a specific
   #cleanup action
   con.execute(
     'CREATE VIEW IF NOT EXISTS '
