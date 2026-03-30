@@ -1,0 +1,13 @@
+{% from 'macros/top_bar.jinja.html' import top_bar %}
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> No more files </title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
+  </head>
+  <body>
+    {{top_bar('Back to main', 'default.get') | indent(4)}}
+    <p> There are no more files in this category. </p>
+  </body>
+</html>

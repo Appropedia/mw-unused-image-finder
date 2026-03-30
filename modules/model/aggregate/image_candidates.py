@@ -5,10 +5,10 @@ from modules.model.table import image_concessions
 
 #Enumeration of available image usage categories
 class Category(enum.Enum):
-  unused_img_all_rev     = 'unused_image_all_revisions_view'
-  used_img_old_rev       = 'used_image_old_revisions_view'
-  used_img_all_rev       = 'used_image_all_revisions_view'
-  used_img_all_rev_count = 'used_image_all_revisions_count_view'
+  unused_img_all_rev     = 'unreviewed_unused_images_by_size_of_all_revs_view'
+  used_img_old_rev       = 'unreviewed_used_images_by_size_of_old_revs_view'
+  used_img_all_rev       = 'unreviewed_used_images_by_size_of_all_revs_view'
+  used_img_all_rev_count = 'unreviewed_used_images_by_count_of_all_revs_view'
 
 #Acquire the next image available from a specified usage category on behalf of a specified user
 #Parameters:
@@ -30,17 +30,12 @@ def acquire_next(user_id: int, concession_period: int, category: Category,
     #Perform the candidate search now. The filter conditions are as follows:
     # - The image image must be after the continuation point (higher row number)
     # - The image has not been recently conceded to another user
-    # - The image is missing a review for at least one of its revisions
     row = con.execute(
       f'SELECT image_title, image_id FROM {category.value} '
       f'WHERE row_num > COALESCE('
         f'(SELECT row_num FROM {category.value} WHERE image_title = ?), 0) '
       f'AND image_id NOT IN '
         f'(SELECT image_id FROM image_concessions WHERE user_id <> ? AND timestamp > ?) '
-      f'AND image_id IN '
-        f'(SELECT revisions.image_id FROM revisions '
-        f'LEFT JOIN revision_reviews ON revisions.id = revision_reviews.revision_id '
-        f'WHERE revision_reviews.revision_id IS NULL) '
       f'ORDER BY row_num ASC LIMIT 1', (prev_title, user_id, time_threshold)).fetchone()
 
     if row is None:
@@ -51,10 +46,6 @@ def acquire_next(user_id: int, concession_period: int, category: Category,
         f'SELECT image_title, image_id FROM {category.value} '
         f'WHERE row_num > COALESCE('
           f'(SELECT row_num FROM {category.value} WHERE image_title = ?), 0) '
-        f'AND image_id IN '
-          f'(SELECT revisions.image_id FROM revisions '
-          f'LEFT JOIN revision_reviews ON revisions.id = revision_reviews.revision_id '
-          f'WHERE revision_reviews.revision_id IS NULL) '
         f'ORDER BY row_num ASC LIMIT 1', (prev_title,)).fetchone()
 
       #If available images run out right before a user requests the next one, this last search may

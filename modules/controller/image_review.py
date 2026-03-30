@@ -52,7 +52,7 @@ def dealer_get():
                                               prev_image)
 
   if image_title is None:
-    return 'There are no more images in this category'
+    return render_template('view/image_review_end.jinja.html')
 
   return redirect(url_for('image_review.get', image_title = image_title, category = category))
 

@@ -19,20 +19,20 @@
       <li> Unused content:
         <ul>
           <li><a href="{{url_for('image_review.dealer_get', category = 'unused_img_all_rev')}}">
-            Unused files
+            Unused files by size ({{unreviewed_unused_images_count}})
           </a></li>
           <li><a href="{{url_for('image_review.dealer_get', category = 'used_img_old_rev')}}">
-            Files with older revisions
+            Files with older revisions by size ({{unreviewed_used_images_with_old_revisions_count}})
           </a></li>
         </ul>
       </li>
       <li> Content in use:
         <ul>
           <li><a href="{{url_for('image_review.dealer_get', category = 'used_img_all_rev')}}">
-            Files by size
+            Files by size ({{unreviewed_used_images_count}})
           </a></li>
           <li><a href="{{url_for('image_review.dealer_get', category = 'used_img_all_rev_count')}}">
-            Files by amount of revisions
+            Files by amount of revisions ({{unreviewed_used_images_count}})
           </a></li>
 {#
           <li>
