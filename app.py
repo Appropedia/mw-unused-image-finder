@@ -5,9 +5,9 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from modules.common import config, app_config, custom_jinja_filters
 from modules.utility import random_password
 from modules.mediawiki import cors_proxy
-from modules.controller import default, session_control, user_management, image_review, file_search
-from modules.controller import cleanup_action, cleanup_reason, review_report, wikitext_template
-from modules.controller import help_pages
+from modules.controller import default, session_control, image_review, unreviewed_files, file_search
+from modules.controller import review_report, cleanup_action, cleanup_reason, wikitext_template
+from modules.controller import user_management, help_pages
 from modules.model import db
 
 #Load the configuration file. Do this only after importing every module so they've had a chance to
@@ -19,13 +19,14 @@ app = Flask(__name__, static_folder = 'assets')
 app.register_blueprint(cors_proxy.blueprint)
 app.register_blueprint(default.blueprint)
 app.register_blueprint(session_control.blueprint)
-app.register_blueprint(user_management.blueprint)
 app.register_blueprint(image_review.blueprint)
+app.register_blueprint(unreviewed_files.blueprint)
 app.register_blueprint(file_search.blueprint)
+app.register_blueprint(review_report.blueprint)
 app.register_blueprint(cleanup_action.blueprint)
 app.register_blueprint(cleanup_reason.blueprint)
-app.register_blueprint(review_report.blueprint)
 app.register_blueprint(wikitext_template.blueprint)
+app.register_blueprint(user_management.blueprint)
 app.register_blueprint(help_pages.blueprint)
 
 #Register all custom Jinja filters

@@ -1,0 +1,50 @@
+{% from 'macros/top_bar.jinja.html' import top_bar %}
+{% from 'macros/results_navigation_strip.jinja.html' import results_navigation_strip %}
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> Unreviewed files </title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'common.css')}}">
+  </head>
+  <body>
+    {{top_bar('Back to main', 'default.get') | indent(4)}}
+    <H1> Unreviewed files </H1>
+    <H2>
+      Category:
+{% if request.args.category == 'unused_img_all_rev' %}
+      Unused files
+{% elif request.args.category == 'used_img_old_rev' %}
+      Files with older revisions
+{% elif request.args.category == 'used_img_all_rev' %}
+      Files by size
+{% elif request.args.category == 'used_img_all_rev_count' %}
+      Files by amount of revisions
+{% else %}
+      Unknown
+{% endif %}
+    </H2>
+{% if results | length > 0 %}
+    <p>
+      Showing {{results | length}} result{{'s' if results | length > 1}} from {{offset + 1}} to
+      {{offset + results | length}}
+      <br>
+      {{results_navigation_strip(limit, offset, more_results, (50, 100, 250, 500),
+        { 'category': category }) | trim | indent(6)}}
+    </p>
+    <ul>
+    {% for r in results %}
+      <li><a href="{{url_for('image_review.get', image_title = r, category = category)}}">{{r}}</a></li>
+    {% endfor %}
+    </ul>
+    <p>
+      {{results_navigation_strip(limit, offset, more_results, (50, 100, 250, 500),
+        { 'category': category }) | trim | indent(6)}}
+    </p>
+{% else %}
+    <p>
+      No files in this category
+    <p>
+{% endif %}
+  </body>
+</html>

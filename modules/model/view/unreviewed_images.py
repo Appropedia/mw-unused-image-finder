@@ -1,4 +1,12 @@
+import enum
 from modules.model import db
+
+#Enumeration of available image usage categories
+class Category(enum.Enum):
+  unused_img_all_rev     = 'unreviewed_unused_images_by_size_of_all_revs_view'
+  used_img_old_rev       = 'unreviewed_used_images_by_size_of_old_revs_view'
+  used_img_all_rev       = 'unreviewed_used_images_by_size_of_all_revs_view'
+  used_img_all_rev_count = 'unreviewed_used_images_by_count_of_all_revs_view'
 
 #Schema initialization function
 @db.schema
@@ -58,22 +66,55 @@ def init_schema() -> None:
     'WHERE image_title NOT IN (SELECT title FROM unused_images) '
     'GROUP BY image_id')
 
-#Get the total count of unreviewed images in all categories
-def get_unreviewed_image_totals():
+#Get image titles in a given range and category
+def get_range(limit: int, offset: int, category: Category):
+  #Request the titles matching the provided category for the specified range, but request one
+  #additional row to confirm that more rows follow
+  cursor = db.get().execute(
+    f'SELECT image_title FROM {category.value} '
+    f'ORDER BY row_num LIMIT ? OFFSET ?', (limit + 1, offset))
+
+  cursor.row_factory = lambda cur, row: row[0]
+
+  #Collect all matching titles
+  results = cursor.fetchmany(limit)
+
+  #Attempt to fetch the additional row, if None then no more rows follow
+  more_results = cursor.fetchone() is not None
+
+  return results, more_results
+
+#Get the count of unreviewed images in all categories and their corresponding totals
+def get_totals():
   cursor = db.get().execute(
     'SELECT '
       '(SELECT COUNT(*) FROM unreviewed_unused_images_by_size_of_all_revs_view), '
       '(SELECT COUNT(*) FROM unreviewed_used_images_by_size_of_old_revs_view), '
-      '(SELECT COUNT(*) FROM unreviewed_used_images_by_size_of_all_revs_view)')
+      '(SELECT COUNT(*) FROM unreviewed_used_images_by_size_of_all_revs_view), '
+      '(SELECT COUNT(*) FROM images WHERE title IN (SELECT title FROM unused_images)), '
+      '(SELECT COUNT(*) FROM '
+        '(SELECT 1 FROM images INNER JOIN revisions ON images.id = revisions.image_id '
+        'WHERE images.title NOT IN (SELECT title FROM unused_images) '
+        'GROUP BY images.id HAVING COUNT(*) >= 2)), '
+      '(SELECT COUNT(*) FROM images WHERE title NOT IN (SELECT title FROM unused_images))')
 
   #Note: The view called unreviewed_used_images_by_size_of_all_revs_view refers to the exact same
   #set as unreviewed_used_images_by_count_of_all_revs_view, with the only difference being their
   #ordering scheme. Therefore only the count of one of the sets is calculated.
 
   cursor.row_factory = lambda cur, row: {
-    'unreviewed_unused_images_count': row[0],
-    'unreviewed_used_images_with_old_revisions_count': row[1],
-    'unreviewed_used_images_count': row[2],
+    'unused_images': {
+      'unreviewed': row[0],
+      'total': row[3],
+    },
+    'used_images_with_old_revs': {
+      'unreviewed': row[1],
+      'total': row[4],
+    },
+    'used_images': {
+      'unreviewed': row[2],
+      'total': row[5],
+    },
   }
 
   return cursor.fetchone()

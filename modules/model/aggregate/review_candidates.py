@@ -1,14 +1,7 @@
-import enum
 from time import time
 from modules.model import db
 from modules.model.table import image_concessions
-
-#Enumeration of available image usage categories
-class Category(enum.Enum):
-  unused_img_all_rev     = 'unreviewed_unused_images_by_size_of_all_revs_view'
-  used_img_old_rev       = 'unreviewed_used_images_by_size_of_old_revs_view'
-  used_img_all_rev       = 'unreviewed_used_images_by_size_of_all_revs_view'
-  used_img_all_rev_count = 'unreviewed_used_images_by_count_of_all_revs_view'
+from modules.model.view.unreviewed_images import Category
 
 #Acquire the next image available from a specified usage category on behalf of a specified user
 #Parameters:

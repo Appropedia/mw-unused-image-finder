@@ -4,7 +4,7 @@ from modules.controller import session_control
 from modules.model.table import users, image_concessions
 from modules.model.view import image_revisions, similar_images
 from modules.model.view import cleanup_action_reason_links, review_details
-from modules.model.aggregate import image_candidates, review_store
+from modules.model.aggregate import review_candidates, review_store
 from modules.common import config
 
 blueprint = Blueprint('image_review', __name__)
@@ -37,24 +37,19 @@ def request_failed(e: HTTPException) -> tuple[str, int] | HTTPException:
 def dealer_get():
   #Read and validate request arguments
   prev_image = request.args.get('prev_image', None)
-  category = request.args.get('category', None)
-  match category:
-    case 'unused_img_all_rev':     cat = image_candidates.Category.unused_img_all_rev
-    case 'used_img_old_rev':       cat = image_candidates.Category.used_img_old_rev
-    case 'used_img_all_rev':       cat = image_candidates.Category.used_img_all_rev
-    case 'used_img_all_rev_count': cat = image_candidates.Category.used_img_all_rev_count
-    case _:                        return abort(400, 'INVALID_VALUE,category')
+  category = _validate_category()
 
   #Choose the next image to deal based on the selected category
-  image_title = image_candidates.acquire_next(g.user_id,
-                                              config.root.image_dealer.concession_period,
-                                              cat,
-                                              prev_image)
+  image_title = review_candidates.acquire_next(g.user_id,
+                                               config.root.image_dealer.concession_period,
+                                               category,
+                                               prev_image)
 
   if image_title is None:
     return render_template('view/image_review_end.jinja.html')
 
-  return redirect(url_for('image_review.get', image_title = image_title, category = category))
+  return redirect(url_for('image_review.get', image_title = image_title,
+                          category = request.args['category']))
 
 #Route handler for image reviews
 @blueprint.get('/image_review/<image_title>')
@@ -153,12 +148,26 @@ def _render_user_review(image_title: str, user_name: str | None) -> str:
   #Write the concession so other users get other images during the concession period
   image_concessions.write(g.user_id, image_id)
 
-  #Note: The image_candidates.acquire_next function call in the image dealer endpoint does also
+  #Note: The review_candidates.acquire_next function call in the image dealer endpoint does also
   #write the concession before redirecting to this endpoint, so this operation may seem redundant.
   #The concession is also made here in case of users sharing URLs to the served images, making it
   #less probable to offer that same image to yet another user.
 
   return render_template('view/image_review.jinja.html', **render_params)
+
+#Make sure the category paremeter is valid and convert it to an Enum value or abort the request
+def _validate_category() -> review_candidates.Category:
+  if 'category' not in request.args:
+    return abort(400, 'MISSING_FIELD,category')
+
+  match request.args['category']:
+    case 'unused_img_all_rev':     category = review_candidates.Category.unused_img_all_rev
+    case 'used_img_old_rev':       category = review_candidates.Category.used_img_old_rev
+    case 'used_img_all_rev':       category = review_candidates.Category.used_img_all_rev
+    case 'used_img_all_rev_count': category = review_candidates.Category.used_img_all_rev_count
+    case _:                        return abort(400, 'INVALID_VALUE,category')
+
+  return category
 
 #Make sure the update query parameters are valid or abort the request
 def _validate_update_args() -> None:

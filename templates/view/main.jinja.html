@@ -18,22 +18,46 @@
     <ul>
       <li> Unused content:
         <ul>
-          <li><a href="{{url_for('image_review.dealer_get', category = 'unused_img_all_rev')}}">
-            Unused files by size ({{unreviewed_unused_images_count}})
-          </a></li>
-          <li><a href="{{url_for('image_review.dealer_get', category = 'used_img_old_rev')}}">
-            Files with older revisions by size ({{unreviewed_used_images_with_old_revisions_count}})
-          </a></li>
+          <li>
+            <a href="{{url_for('image_review.dealer_get', category = 'unused_img_all_rev')}}">
+              Unused files by size
+            </a>
+            ({{unused_images['reviewed']}}/{{unused_images['total']}},
+            progress: {{unused_images['progress']}}%,
+            <a href="{{url_for('unreviewed_files.get', category = 'unused_img_all_rev')}}">
+              {{unused_images['unreviewed']}} left</a>)
+          </li>
+          <li>
+            <a href="{{url_for('image_review.dealer_get', category = 'used_img_old_rev')}}">
+              Files with older revisions by size
+            </a>
+            ({{used_images_with_old_revs['reviewed']}}/{{used_images_with_old_revs['total']}},
+            progress: {{used_images_with_old_revs['progress']}}%,
+            <a href="{{url_for('unreviewed_files.get', category = 'used_img_old_rev')}}">
+              {{used_images_with_old_revs['unreviewed']}} left</a>)
+          </li>
         </ul>
       </li>
       <li> Content in use:
         <ul>
-          <li><a href="{{url_for('image_review.dealer_get', category = 'used_img_all_rev')}}">
-            Files by size ({{unreviewed_used_images_count}})
-          </a></li>
-          <li><a href="{{url_for('image_review.dealer_get', category = 'used_img_all_rev_count')}}">
-            Files by amount of revisions ({{unreviewed_used_images_count}})
-          </a></li>
+          <li>
+            <a href="{{url_for('image_review.dealer_get', category = 'used_img_all_rev')}}">
+              Files by size
+            </a>
+            ({{used_images['reviewed']}}/{{used_images['total']}},
+            progress: {{used_images['progress']}}%,
+            <a href="{{url_for('unreviewed_files.get', category = 'used_img_all_rev')}}">
+              {{used_images['unreviewed']}} left</a>)
+          </li>
+          <li>
+            <a href="{{url_for('image_review.dealer_get', category = 'used_img_all_rev_count')}}">
+            Files by amount of revisions
+            </a>
+            ({{used_images['reviewed']}}/{{used_images['total']}},
+            progress: {{used_images['progress']}}%,
+            <a href="{{url_for('unreviewed_files.get', category = 'used_img_all_rev_count')}}">
+              {{used_images['unreviewed']}} left</a>)
+          </li>
 {#
           <li>
             Files with duplicate revisions
