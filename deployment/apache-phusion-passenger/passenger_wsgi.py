@@ -15,6 +15,6 @@ from app import app
 #way but Phusion Passenger doesn't do that.
 def application(environ, start_response):
   if 'PATH_INFO' in environ:
-    environ['PATH_INFO'] = unquote(environ['PATH_INFO'])
+    environ['PATH_INFO'] = unquote(environ['PATH_INFO']).encode('utf-8').decode('latin-1')
 
   return app(environ, start_response)

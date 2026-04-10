@@ -568,10 +568,10 @@ export async function download_similar_image_data(api_url, state, similar_images
         <div class="similar_image">
           <img src="${wiki_image_info[si_title][si_timestamp].thumburl}">
         </div>
-        <div>
         <div class="similar_image_title">
           ${si_title}
         </div>
+        <div>
           <span style="color: ${similar_images[ref_timestamp][si_title].unused? 'red': 'green'};">
             ${similar_images[ref_timestamp][si_title].unused? '&cross;': '&check;'}
           </span>

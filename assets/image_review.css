@@ -70,10 +70,16 @@ div.similar_image_strip_item div.similar_image {
   display: grid;        /* Create a 1x1 grid with padding to separate thumbnails */
   place-items: center;
   padding: 10px;
-  min-width: 120px;     /* Set a fixed size of 120px x 120px */
-  max-width: 120px;
-  min-height: 120px;
-  max-height: 120px;
+  width: 120px;         /* Set a fixed size of 120px x 120px */
+  height: 120px;
+}
+
+/* Similar image thumbnails */
+div.similar_image img {
+  min-width: 0;      /* Allow scaling down to the container size or keep intrinsic size */
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 /* Container for the titles of the similar images */
