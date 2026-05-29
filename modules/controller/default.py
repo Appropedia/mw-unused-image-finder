@@ -13,11 +13,7 @@ def get() -> str:
   #Compute review count and progress for the different categories
   review_params = {
     category: {
-      'unreviewed': totals['unreviewed'],
-      'total': totals['total'],
       'reviewed': totals['total'] - totals['unreviewed'],
-      'progress': 100 if totals['total'] == 0 else\
-                  round((totals['total'] - totals['unreviewed']) / totals['total'] * 100, 4),
     } for category, totals in unreviewed_image_totals.items()
   }
 
