@@ -45,8 +45,7 @@
 
       <div class="panel_container">
         <div class="panel">
-          <div class="current_img">
-            <img id="current_image">
+          <div class="selected_revision" id="selected_revision_container">
           </div>
           <div>
             <div id="similar_image_strip_label"></div>
@@ -158,6 +157,8 @@
 
       const image_title = {{image['title'] | tojson}};
 
+      const revision_sizes = {{revision_sizes | tojson}};
+
 {% if 'review' in g.user_privileges %}
       const cleanup_actions = {{cleanup_actions | tojson(indent = 2) | indent(6)}};
 
@@ -166,8 +167,9 @@
 
       const state = {
         similar_img_strip_elements: {},
+        revision_view_elements: [],
         revisions: [],
-        selected_image: 0,
+        selected_revision: 0,
       };
 
       //Asynchronously update the information for similar images as well
@@ -175,7 +177,8 @@
 {% if 'review' in g.user_privileges %}
 
       //Aynchronously update the revision information
-      download_revision_data(api_url, state, image_title, cleanup_actions, cleanup_proposal);
+      download_revision_data(api_url, state, image_title, revision_sizes, cleanup_actions,
+                             cleanup_proposal);
 
       //Initialize the common options section elements
       initialize_common_options(state, cleanup_actions);
@@ -185,7 +188,7 @@
 {% else %}
 
       //Aynchronously update the revision information
-      download_revision_data(api_url, state, image_title, null, cleanup_proposal);
+      download_revision_data(api_url, state, image_title, revision_sizes, null, cleanup_proposal);
 {% endif %}
     </script>
   </body>

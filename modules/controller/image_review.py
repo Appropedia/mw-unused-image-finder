@@ -122,6 +122,9 @@ def _render_user_review(image_title: str, user_name: str | None) -> str:
 
   if image_id is None: abort(404)
 
+  #Get the sizes of all revisions and add them to the render parameters
+  render_params['revision_sizes'] = image_revisions.get_revision_sizes(image_title)
+
   #Add all available cleanup actions and reasons to the render parameters if the user is allowed to
   #create or modify reviews
   if 'review' in g.user_privileges:

@@ -37,16 +37,16 @@ div.panel > div {
   background-color: #F8F9FA;  /* Background color for all small panels*/
 }
 
-/* Container for the currently selected image */
-div.panel div.current_img {
+/* Container for the currently selected revision */
+div.panel div.selected_revision {
   flex: 1 120px;        /* Set a minimum size and allow growing */
   display: grid;
   place-items: center;
   min-height: 0;        /* Allow children to be scaled down to any height */
 }
 
-/* Currently selected image */
-div.current_img img {
+/* Currently selected revision */
+div.selected_revision * {
   min-width: 0;      /* Allow scaling down to the container size or keep intrinsic size */
   min-height: 0;
   max-width: 100%;

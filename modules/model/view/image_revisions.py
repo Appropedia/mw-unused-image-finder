@@ -19,6 +19,14 @@ def get_image_summary(image_title: str) -> tuple[int, str, int, int, int] |\
 
   return (None,) * 5 if row is None else row
 
+#Get the size of every revision of an image
+def get_revision_sizes(image_title: str) -> dict[str, int]:
+  rows = db.get().execute(
+    'SELECT revision_timestamp, revision_size FROM image_revisions_view where image_title = ?',
+    (image_title,)).fetchall()
+
+  return { revision_timestamp: revision_size for revision_timestamp, revision_size in rows }
+
 #Get information about a specific revision
 def get_revision_info(revision_id: int) -> tuple[int, str, str]:
   return db.get().execute(
